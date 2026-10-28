@@ -6,10 +6,33 @@
 /** Индекс пункта `Presets` в главном меню. */
 #define TEA_TIMER_MENU_INDEX_PRESETS 0
 
+/**
+ * Маршрутизация перед показом списка файлов (storage-layout.md, «Матрица состояний носителя»):
+ * нет SD → `Error`; каталога нет или он пуст → `NoPresets`; иначе → `FileSelect`.
+ */
+void tea_timer_show_presets(TeaTimerApp* app) {
+    furi_assert(app != NULL);
+
+    FS_Error status = storage_sd_status(app->storage);
+    if(status != FSE_OK) {
+        FURI_LOG_W(TAG, "sd status %d", (int)status);
+        scene_manager_next_scene(app->scene_manager, TeaTimerSceneError);
+        return;
+    }
+
+    if(!tea_timer_has_presets(app->storage)) {
+        FURI_LOG_I(TAG, "no presets in %s", TEA_TIMER_APP_DATA_PATH);
+        scene_manager_next_scene(app->scene_manager, TeaTimerSceneNoPresets);
+        return;
+    }
+
+    scene_manager_next_scene(app->scene_manager, TeaTimerSceneFileSelect);
+}
+
 static void tea_timer_scene_menu_submenu_callback(void* context, uint32_t index) {
     TeaTimerApp* app = context;
     if(index == TEA_TIMER_MENU_INDEX_PRESETS) {
-        scene_manager_next_scene(app->scene_manager, TeaTimerSceneFileSelect);
+        tea_timer_show_presets(app);
     }
 }
 

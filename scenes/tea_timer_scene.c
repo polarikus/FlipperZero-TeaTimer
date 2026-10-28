@@ -5,6 +5,8 @@ static void (*const tea_timer_scene_on_enter_handlers[])(void*) = {
     tea_timer_scene_file_select_on_enter,
     tea_timer_scene_preset_card_on_enter,
     tea_timer_scene_brew_on_enter,
+    tea_timer_scene_no_presets_on_enter,
+    tea_timer_scene_error_on_enter,
 };
 
 static bool (*const tea_timer_scene_on_event_handlers[])(void*, SceneManagerEvent) = {
@@ -12,6 +14,8 @@ static bool (*const tea_timer_scene_on_event_handlers[])(void*, SceneManagerEven
     tea_timer_scene_file_select_on_event,
     tea_timer_scene_preset_card_on_event,
     tea_timer_scene_brew_on_event,
+    tea_timer_scene_no_presets_on_event,
+    tea_timer_scene_error_on_event,
 };
 
 static void (*const tea_timer_scene_on_exit_handlers[])(void*) = {
@@ -19,6 +23,8 @@ static void (*const tea_timer_scene_on_exit_handlers[])(void*) = {
     tea_timer_scene_file_select_on_exit,
     tea_timer_scene_preset_card_on_exit,
     tea_timer_scene_brew_on_exit,
+    tea_timer_scene_no_presets_on_exit,
+    tea_timer_scene_error_on_exit,
 };
 
 const SceneManagerHandlers tea_timer_scene_handlers = {

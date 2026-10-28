@@ -316,18 +316,21 @@ description: "Список задач реализации фичи Tea Timer �
 **Independent Test**: `quickstart.md` §5 S2 — пресет с `max_pours: 2`, три пролива подряд,
 третий запускается без диалогов, экран показывает `Pours 3 / 2` + `OVER`.
 
-- [ ] T031 [US2] Реализовать признак превышения в `views/brew_view.c`: при
+- [X] T031 [US2] Реализовать признак превышения в `views/brew_view.c`: при
       `view_model->over_limit` счётчик `Pours X / N` рисуется инверсным блоком
       (`canvas_draw_rbox` + белый текст) и добавляется плашка `OVER`; проверка, что счётчик и
       строка `Leaf` остаются на экране при длинном названии (обрезка по ширине)
       (C-UI-4, FR-014, Edge Cases)
-- [ ] T032 [US2] Передавать `over_limit` в модель в `scenes/tea_timer_scene_brew.c` и не создавать блокирующих диалогов: заполнять `view_model->over_limit =
+- [X] T032 [US2] Передавать `over_limit` в модель в `scenes/tea_timer_scene_brew.c` и не создавать блокирующих диалогов: заполнять `view_model->over_limit =
       brew_session_over_limit(&app->session)` при каждом `Tick`, старте и завершении;
       запуск пролива при `completed_pours >= max_pours` идёт тем же путём, что обычный,
       без `DialogMessage`/`popup` (FR-014, SC-005)
-- [ ] T033 [US2] Проверить US2 (`views/brew_view.c`, `scenes/tea_timer_scene_brew.c`): положить `.tea` с `max_pours: 2` (например,
+- [X] T033 [US2] Проверить US2 (`views/brew_view.c`, `scenes/tea_timer_scene_brew.c`): положить `.tea` с `max_pours: 2` (например,
       `specs/001-tea-brew-timer/examples/`), выполнить S2; зафиксировать, что 4-й пролив
       стартует и время растёт по правилу приращения
+      — **проверено на устройстве** (`quick_two_pours.tea`, `max_pours: 2`): проливы 5 → 7 → 9 с,
+      после третьего экран показал `Pours 3 / 2` + плашку `OVER`, 4-й пролив стартовал
+      на `00:11` без диалогов; счётчик и плашка совпадают с макетом C-UI-4
 
 **Checkpoint**: US1 и US2 работают независимо.
 
@@ -342,7 +345,7 @@ description: "Список задач реализации фичи Tea Timer �
 (диалог с причиной, возврат в браузер), переименовать каталог (`No presets found` + `Reload`),
 извлечь карту (`SD card not found`, OK — повтор, BACK — выход).
 
-- [ ] T034 [P] [US3] Создать `scenes/tea_timer_scene_no_presets.c` — `widget`:
+- [X] T034 [P] [US3] Создать `scenes/tea_timer_scene_no_presets.c` — `widget`:
       `No presets found`, `Add .tea files to`, `apps_data/tea_timer`,
       `widget_add_button_element(w, GuiButtonTypeCenter, "Reload", cb, app)`; OK/`Reload` —
       повторная проверка каталога и при появлении файлов переход в `SceneFileSelect`; BACK —
@@ -350,7 +353,7 @@ description: "Список задач реализации фичи Tea Timer �
       `storage_dir_open` + цикл `storage_dir_read` по `APP_DATA_PATH("")`, пропуск каталогов
       (`file_info_is_dir`), dot-файлов и файлов без расширения `.tea`; `storage_dir_close()`
       на всех ветках, включая неудачное открытие (принцип V, storage-layout.md:64)
-- [ ] T035 [P] [US3] Создать `scenes/tea_timer_scene_error.c` — состояние «SD-карта
+- [X] T035 [P] [US3] Создать `scenes/tea_timer_scene_error.c` — состояние «SD-карта
       недоступна»: короткий английский текст `SD card not found`, подсказка
       `Insert the card and press OK`, OK — повторная проверка `storage_sd_status`, BACK —
       выход; фоновая проверка перед входом в `SceneFileSelect` использует
@@ -359,14 +362,14 @@ description: "Список задач реализации фичи Tea Timer �
       файлов не нужны после замены FR-006 на `file_browser` (FR-007 переформулирован,
       причина показывается диалогом C-UI-10 в T038). Сцена остаётся только в
       `contracts/ui-screens.md` C-UI-7 как резерв для 002.
-- [ ] T037 [US3] Добавить проверку носителя и каталога в `scenes/tea_timer_scene_file_select.c`
+- [X] T037 [US3] Добавить проверку носителя и каталога в `scenes/tea_timer_scene_file_select.c`
       перед показом браузера: `storage_sd_status() != StorageStatusOK` → `SceneError`;
       `!storage_dir_exists(APP_DATA_PATH(""))` → `SceneNoPresets`;
       `!tea_timer_has_presets(app->storage)` (T034) → `SceneNoPresets` — пустой каталог
       даёт `No presets found`, как требует FR-008 и C-UI-5; скан выполняется только по
       корню `APP_DATA_PATH("")` и только на факт наличия `.tea`;
       лог `tea_timer: sd status <code>` (storage-layout.md, матрица состояний)
-- [ ] T038 [US3] Реализовать диалог ошибки выбранного файла в `scenes/tea_timer_scene_file_select.c`: при `TeaPresetResult != OK` —
+- [X] T038 [US3] Реализовать диалог ошибки выбранного файла в `scenes/tea_timer_scene_file_select.c`: при `TeaPresetResult != OK` —
       `dialog_message_alloc()`, `dialog_message_set_header(msg, "Cannot use file", …)`,
       текст из таблицы `data-model.md` §5 (`Missing field: %s`, `Not a number: %s`,
       `Out of range: %s`, `Duplicate field: %s`, `Name is empty`, `Bad name: %s`,
@@ -375,14 +378,22 @@ description: "Список задач реализации фичи Tea Timer �
       `dialog_message_show()`; после закрытия — остаёмся в `SceneFileSelect`, файл остаётся
       виден; `dialog_message_free` на всех ветках; лог
       `tea_timer: preset error <code> field=<field>` (C-UI-10, FR-003/FR-007)
-- [ ] T039 [US3] Зарегистрировать сцены в `scenes/tea_timer_scene_config.h`:
+- [X] T039 [US3] Зарегистрировать сцены в `scenes/tea_timer_scene_config.h`:
       `TeaTimerSceneNoPresets`, `TeaTimerSceneError` — а также в `scenes/tea_timer_scene.c`,
       добавить `view_dispatcher_add_view`/`remove_view` для `widget` «нет пресетов» в
       `tea_timer.c` (парность ресурсов). `popup` заводится только вместе с 002
       («Сохранено: file.tea»), в 001 не нужен
-- [ ] T040 [US3] Проверить US3: сценарии S3 и S4 из `quickstart.md` на устройстве
+- [X] T040 [US3] Проверить US3: сценарии S3 и S4 из `quickstart.md` на устройстве
       (некорректный файл из `examples/`, отсутствие каталога, извлечение карты; приложение не
       падает, список остаётся отзывчивым) — правки в `scenes/tea_timer_scene_file_select.c`
+      — **проверено на устройстве**: `broken_example.tea` → диалог `Cannot use file` /
+      `Not a number: leaf_g_per_100ml`, OK возвращает в браузер без падения; каталог,
+      переименованный в `tea_timer_off`, даёт `No presets found` с `Reload`, после возврата
+      каталога `Reload` открывает список; извлечение SD-карты и `SD card not found`
+      (OK — повтор, BACK — выход) проверены вручную. По ходу проверки найден и исправлен баг:
+      `APP_DATA_PATH("")` даёт путь `/data/` с завершающим слэшем, из-за чего
+      `storage_dir_open()`/`storage_dir_exists()` возвращали `FSE_INVALID_NAME` и файловый
+      браузер не открывался; теперь используется `STORAGE_APP_DATA_PATH_PREFIX` (`/data`)
 
 **Checkpoint**: US1, US2 и US3 работают независимо.
 
@@ -397,26 +408,32 @@ description: "Список задач реализации фичи Tea Timer �
 рядом: отклонение ≤ 1 с, экран не гаснет, OK во время отсчёта останавливает пролив без
 изменения `Pours`, повторный запуск — снова 60 с.
 
-- [ ] T041 [US4] Управлять подсветкой в `scenes/tea_timer_scene_brew.c`:
+- [X] T041 [US4] Управлять подсветкой в `scenes/tea_timer_scene_brew.c`:
       `sequence_display_backlight_enforce_on` при старте пролива (`IDLE → RUNNING`,
       `DONE → RUNNING`), `sequence_display_backlight_enforce_auto` при
       `RUNNING → DONE`, `RUNNING → IDLE` (STOP) и на `on_exit` сцены; гарантировать
       возврат в авто на всех путях (R-T-3, FR-017, SC-006)
-- [ ] T042 [US4] Обеспечить однократность сигнала в `scenes/tea_timer_scene_brew.c` и отсутствие автовозврата: переход `RUNNING → DONE` выполняется ровно один раз
+- [X] T042 [US4] Обеспечить однократность сигнала в `scenes/tea_timer_scene_brew.c` и отсутствие автовозврата: переход `RUNNING → DONE` выполняется ровно один раз
       (проверка `phase == BrewPhaseRUNNING` перед `brew_session_complete()`), в `DONE` тик
       только перерисовывает, сигнал не повторяется, автозапуска следующего пролива нет;
       `DONE` сохраняется до OK/BACK (FR-013, FR-019, SC-002)
-- [ ] T043 [US4] Корректно завершать работу во время отсчёта в `tea_timer.c`: в
+- [X] T043 [US4] Корректно завершать работу во время отсчёта в `tea_timer.c`: в
       `tea_timer_free()` при активной сессии — `brew_session_abort()`, отправка
       `sequence_display_backlight_enforce_auto` и `sequence_reset_sound` /
       `sequence_reset_vibro`, затем обычный обратный порядок освобождения; звук, вибро и
       принудительная подсветка после выхода не остаются (FR-023, Edge Cases «Уход из
       приложения во время отсчёта»)
-- [ ] T044 [US4] Проверить US4 (`scenes/tea_timer_scene_brew.c`, `lib/brew_math.c`):
+- [X] T044 [US4] Проверить US4 (`scenes/tea_timer_scene_brew.c`, `lib/brew_math.c`):
       сценарий S5 с секундомером на устройстве и сверка вёрстки с макетами
       `specs/001-tea-brew-timer/ui/`; при отклонении > 1 с — проверить
       `brew_session_start()` (расчёт `deadline_tick`) и `brew_session_remaining_sec()` в
       `lib/brew_math.c`
+      — **проверено на устройстве** (`accuracy_60.tea`, `first_pour_sec: 60`): отсчёт
+      завершился через 60.21 с по внешнему таймеру (включая задержку RPC), отклонение ≤ 1 с;
+      экран не гаснет во время отсчёта, после завершения и выхода подсветка возвращается
+      в авто (проверено вручную); OK во время отсчёта останавливает пролив — `Pours 0 / 6`
+      не изменился, повторный старт снова `01:00`; вёрстка RUNNING/DONE совпадает с макетами
+      (счётчик, `Time is up!`, `Pour 2 01:05`, `OK: start`)
 
 **Checkpoint**: все четыре истории независимо работоспособны.
 

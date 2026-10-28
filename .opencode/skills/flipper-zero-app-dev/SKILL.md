@@ -17,10 +17,12 @@ description: Разработка и ревью приложений (FAP) дл�
    - Манифест, сборка ufbt, ассеты, отладка — `references/manifest-and-build.md`
    - Правила и антипаттерны — `references/best-practices.md`
    - Тесты — `references/testing.md`
+   - Автотесты UI на устройстве по USB (RPC) — `references/rpc-ui-testing.md`
 2. Возьми заготовку из `examples/`:
    - `examples/scene-app/` — канонический каркас приложения со сценами (копируй и переименовывай `my_app`)
    - `examples/view-port-app/` — минимальное приложение на одном ViewPort
    - `examples/host-test/` — юнит-тесты чистой логики на хосте
+   - `examples/rpc-ui-test/` — снимки экрана и нажатия по USB для UI-сценариев
 3. Собери и запусти: `ufbt launch` (см. ниже).
 
 ## Железо и ограничения (важно для решений)
@@ -159,6 +161,8 @@ static bool my_app_back_event_callback(void* context) {
 - Блокирующее ожидание в `on_enter`/draw → зависание UI.
 - `free()` до `furi_record_close()` или наоборот → use-after-free/утечка.
 - Файл не закрыт при ошибке open → утечка дескриптора и сбой SD.
+- Каталог приложения открывают как `APP_DATA_PATH("")` → путь `/data/` со слэшем,
+  `storage_dir_open()` отдаёт `FSE_INVALID_NAME`; нужен `STORAGE_APP_DATA_PATH_PREFIX`.
 - Слишком маленький `stack_size` → stack overflow и краш (проверять `top`).
 - Использование устаревшего API (`view_dispatcher_enable_queue`, `furi_hal_uart_*`):
   в актуальной прошивке очередь всегда включена, UART заменён на `furi_hal_serial_*`.

@@ -26,7 +26,14 @@ static void brew_view_draw_inverse(Canvas* canvas, uint8_t center_x, uint8_t y, 
     canvas_set_color(canvas, ColorBlack);
 }
 
-/** Строка счётчика проливов: инверсная при превышении лимита. */
+/** Ширина инверсного блока счётчика при превышении лимита (слева от плашки OVER). */
+#define BREW_VIEW_POURS_OVER_WIDTH 92
+
+/**
+ * Строка счётчика проливов.
+ * При превышении лимита счётчик рисуется инверсным блоком слева, а справа — плашка OVER;
+ * блоки не перекрываются даже при длинном числе проливов.
+ */
 static void brew_view_draw_pours(Canvas* canvas, const BrewViewModel* model, uint8_t y) {
     char buffer[24];
     snprintf(
@@ -35,20 +42,43 @@ static void brew_view_draw_pours(Canvas* canvas, const BrewViewModel* model, uin
         "Pours %u / %u",
         (unsigned)model->completed_pours,
         (unsigned)model->max_pours);
-    if(model->over_limit) {
-        brew_view_draw_inverse(canvas, 64, y, buffer);
-    } else {
+
+    canvas_set_font(canvas, FontSecondary);
+
+    if(!model->over_limit) {
         canvas_draw_str_aligned(canvas, 64, y, AlignCenter, AlignTop, buffer);
+        return;
     }
+
+    // Инверсный блок счётчика.
+    uint16_t width = canvas_string_width(canvas, buffer) + 6;
+    if(width > BREW_VIEW_POURS_OVER_WIDTH) {
+        width = BREW_VIEW_POURS_OVER_WIDTH;
+    }
+    canvas_set_color(canvas, ColorBlack);
+    canvas_draw_rbox(canvas, 2, y, width, 12, 2);
+    canvas_set_color(canvas, ColorWhite);
+    canvas_draw_str_aligned(canvas, 2 + width / 2, y + 1, AlignCenter, AlignTop, buffer);
+
+    // Плашка OVER справа от счётчика.
+    canvas_set_color(canvas, ColorBlack);
+    canvas_draw_rbox(canvas, 98, y, 28, 12, 2);
+    canvas_set_color(canvas, ColorWhite);
+    canvas_draw_str_aligned(canvas, 112, y + 1, AlignCenter, AlignTop, "OVER");
+    canvas_set_color(canvas, ColorBlack);
 }
 
-/** Плашка OVER в правом верхнем углу строки счётчика. */
-static void brew_view_draw_over_badge(Canvas* canvas, uint8_t y) {
-    canvas_set_color(canvas, ColorBlack);
-    canvas_draw_rbox(canvas, 100, y, 26, 12, 2);
-    canvas_set_color(canvas, ColorWhite);
-    canvas_draw_str_aligned(canvas, 113, y + 1, AlignCenter, AlignTop, "OVER");
-    canvas_set_color(canvas, ColorBlack);
+/** Строка граммовки: остаётся на экране и при длинном названии. */
+static void brew_view_draw_leaf(Canvas* canvas, const BrewViewModel* model, uint8_t y) {
+    char buffer[28];
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "Leaf %u.%u g/100ml",
+        (unsigned)(model->leaf_tenths_g / 10),
+        (unsigned)(model->leaf_tenths_g % 10));
+    canvas_set_font(canvas, FontSecondary);
+    canvas_draw_str_aligned(canvas, 64, y, AlignCenter, AlignTop, buffer);
 }
 
 static void brew_view_draw_callback(Canvas* canvas, void* model_ptr) {
@@ -70,33 +100,31 @@ static void brew_view_draw_callback(Canvas* canvas, void* model_ptr) {
     char buffer[24];
 
     if(model->phase == BrewPhaseRUNNING) {
+        brew_view_draw_leaf(canvas, model, 8);
+
         brew_math_format_time(model->remaining_sec, buffer, sizeof(buffer));
         canvas_set_font(canvas, FontBigNumbers);
-        canvas_draw_str_aligned(canvas, 64, 15, AlignCenter, AlignTop, buffer);
+        canvas_draw_str_aligned(canvas, 64, 17, AlignCenter, AlignTop, buffer);
 
+        brew_view_draw_pours(canvas, model, 37);
         canvas_set_font(canvas, FontSecondary);
-        brew_view_draw_pours(canvas, model, 40);
-        if(model->over_limit) {
-            brew_view_draw_over_badge(canvas, 40);
-        }
         canvas_draw_str_aligned(canvas, 64, 52, AlignCenter, AlignTop, "OK: stop");
     } else {
         // DONE: время истекло, следующий пролив запускается вручную.
-        brew_view_draw_inverse(canvas, 64, 12, "Time is up!");
+        brew_view_draw_leaf(canvas, model, 8);
 
+        brew_view_draw_inverse(canvas, 64, 17, "Time is up!");
+
+        brew_view_draw_pours(canvas, model, 31);
         canvas_set_font(canvas, FontSecondary);
-        brew_view_draw_pours(canvas, model, 28);
-        if(model->over_limit) {
-            brew_view_draw_over_badge(canvas, 28);
-        }
 
         brew_math_format_time(model->pour_sec, buffer, sizeof(buffer));
         char pour_line[40];
         snprintf(
             pour_line, sizeof(pour_line), "Pour %u  %s", (unsigned)model->pour_number, buffer);
-        canvas_draw_str_aligned(canvas, 64, 40, AlignCenter, AlignTop, pour_line);
+        canvas_draw_str_aligned(canvas, 64, 44, AlignCenter, AlignTop, pour_line);
 
-        canvas_draw_str_aligned(canvas, 64, 53, AlignCenter, AlignTop, "OK: start");
+        canvas_draw_str_aligned(canvas, 64, 54, AlignCenter, AlignTop, "OK: start");
     }
 }
 

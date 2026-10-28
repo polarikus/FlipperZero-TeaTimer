@@ -76,12 +76,40 @@ void tea_timer_scene_file_select_file_callback(void* context) {
     view_dispatcher_send_custom_event(app->view_dispatcher, TeaTimerEventFileSelected);
 }
 
+/**
+ * Проверка носителя и каталога непосредственно перед показом браузера (T037).
+ * Дублирует маршрутизацию из меню, чтобы перехватить карту, извлечённую между
+ * проверкой и входом в сцену. При отказе сцена уже переключена на `Error`/`NoPresets`.
+ */
+static bool tea_timer_scene_file_select_media_ready(TeaTimerApp* app) {
+    FS_Error status = storage_sd_status(app->storage);
+    if(status != FSE_OK) {
+        FURI_LOG_W(TAG, "sd status %d", (int)status);
+        scene_manager_next_scene(app->scene_manager, TeaTimerSceneError);
+        return false;
+    }
+
+    if(!storage_dir_exists(app->storage, TEA_TIMER_APP_DATA_PATH) ||
+       !tea_timer_has_presets(app->storage)) {
+        FURI_LOG_I(TAG, "no presets in %s", TEA_TIMER_APP_DATA_PATH);
+        scene_manager_next_scene(app->scene_manager, TeaTimerSceneNoPresets);
+        return false;
+    }
+
+    return true;
+}
+
 void tea_timer_scene_file_select_on_enter(void* context) {
     TeaTimerApp* app = context;
+
+    if(!tea_timer_scene_file_select_media_ready(app)) {
+        return;
+    }
 
     FURI_LOG_I(TAG, "file select at %s", TEA_TIMER_APP_DATA_PATH);
     furi_string_set(app->file_path, TEA_TIMER_APP_DATA_PATH);
     file_browser_start(app->file_browser, app->file_path);
+    app->file_browser_started = true;
     view_dispatcher_switch_to_view(app->view_dispatcher, TeaTimerViewFileSelect);
 }
 
@@ -95,7 +123,11 @@ bool tea_timer_scene_file_select_on_event(void* context, SceneManagerEvent event
             consumed = true;
         }
     } else if(event.type == SceneManagerEventTypeBack) {
-        scene_manager_previous_scene(app->scene_manager);
+        // Возврат в главное меню, минуя промежуточные сцены-заглушки.
+        if(!scene_manager_search_and_switch_to_previous_scene(
+               app->scene_manager, TeaTimerSceneMenu)) {
+            view_dispatcher_stop(app->view_dispatcher);
+        }
         consumed = true;
     }
 
@@ -104,5 +136,9 @@ bool tea_timer_scene_file_select_on_event(void* context, SceneManagerEvent event
 
 void tea_timer_scene_file_select_on_exit(void* context) {
     TeaTimerApp* app = context;
-    file_browser_stop(app->file_browser);
+    // file_browser_stop безопасен только после file_browser_start: парность ресурсов.
+    if(app->file_browser_started) {
+        file_browser_stop(app->file_browser);
+        app->file_browser_started = false;
+    }
 }

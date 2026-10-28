@@ -21,6 +21,13 @@ Storage* storage = furi_record_open(RECORD_STORAGE);
 | `INT_PATH("...")` | внутренняя flash (осторожно, мало места) |
 | `ANY_PATH("...")` | `/int` или `/ext` |
 
+**Ловушка с каталогом приложения.** `APP_DATA_PATH("")` разворачивается в `/data/` —
+с завершающим слэшем, и `storage_dir_open()`/`storage_dir_exists()` на таком пути
+возвращают `FSE_INVALID_NAME` (проверено на 1.5.1). Обращение к *каталогу* приложения
+пиши без слэша: `#define MY_APP_DIR STORAGE_APP_DATA_PATH_PREFIX` (публичный макрос
+`"/data"`) или `APP_DATA_PATH(".")`-подобного шаблона не используй. Для файлов внутри
+каталога `APP_DATA_PATH("file.tea")` работает как обычно.
+
 Открытие/чтение/запись:
 
 ```c

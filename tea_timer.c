@@ -77,6 +77,15 @@ static TeaTimerApp* tea_timer_alloc(void) {
     view_dispatcher_add_view(
         app->view_dispatcher, TeaTimerViewBrew, brew_view_get_view(app->brew_view));
 
+    // «Нет пресетов» и «нет SD-карты» — стандартные Widget.
+    app->no_presets = widget_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewNoPresets, widget_get_view(app->no_presets));
+
+    app->error = widget_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewError, widget_get_view(app->error));
+
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
     scene_manager_next_scene(app->scene_manager, TeaTimerSceneMenu);
 
@@ -102,16 +111,26 @@ static void tea_timer_free(TeaTimerApp* app) {
     notification_message(app->notification, &sequence_reset_sound);
     notification_message(app->notification, &sequence_reset_vibro);
 
+    // Если выход случился прямо из выбора файла, on_exit сцены мог не выполниться.
+    if(app->file_browser_started) {
+        file_browser_stop(app->file_browser);
+        app->file_browser_started = false;
+    }
+
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewBrew);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewPresetCard);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewFileSelect);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewMenu);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewNoPresets);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewError);
 
     view_dispatcher_free(app->view_dispatcher);
     scene_manager_free(app->scene_manager);
 
     brew_view_free(app->brew_view);
     widget_free(app->preset_card);
+    widget_free(app->no_presets);
+    widget_free(app->error);
     file_browser_free(app->file_browser);
     submenu_free(app->submenu);
 

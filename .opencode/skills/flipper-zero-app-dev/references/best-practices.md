@@ -110,6 +110,9 @@ void my_app_free(MyApp* app) {
 ## 6. Работа с файлами
 
 - Данные приложения — `APP_DATA_PATH("...")`; ассеты — `APP_ASSETS_PATH("...")`.
+- **Каталог** приложения — без завершающего слэша: `APP_DATA_PATH("")` даёт `/data/`,
+  а `storage_dir_open()`/`storage_dir_exists()` на таком пути возвращают
+  `FSE_INVALID_NAME`. Используй `STORAGE_APP_DATA_PATH_PREFIX` (`"/data"`).
 - Всегда `storage_file_close()`, даже если `storage_file_open()` вернул `false`.
 - Проверяй ошибки `FS_Error` и показывай понятное сообщение.
 - Для сохранения настроек: пиши во временный файл, затем `storage_common_rename`
