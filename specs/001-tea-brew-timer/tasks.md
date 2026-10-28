@@ -443,34 +443,69 @@ description: "Список задач реализации фичи Tea Timer �
 
 **Цель**: документация, стиль, память, итоговый прогон тестов и чек-лист готовности.
 
-- [ ] T045 [P] Обновить `README.md` в корне (единственный англоязычный документ, принцип
+- [X] T045 [P] Обновить `README.md` в корне (единственный англоязычный документ, принцип
       VII): установка FAP, каталог `/ext/apps_data/tea_timer/`, формат `.tea` с примером,
       управление, сборка и прогон тестов `ufbt cli` → `tea_timer_test`
-- [ ] T046 [P] Проверить строки интерфейса во всех собственных экранах: `views/brew_view.c`,
+      — **создан** `README.md`: требования, установка (ufbt/копирование
+      в `/ext/apps/Tools/`), каталог пресетов, таблица полей `.tea` и пример
+      `green_tea.tea`, управление по экранам, сборка, прогон тестов на устройстве с
+      фактическим отчётом (`20 tests, 101 assertions`)
+- [X] T046 [P] Проверить строки интерфейса во всех собственных экранах: `views/brew_view.c`,
       `scenes/tea_timer_scene_menu.c`, `scenes/tea_timer_scene_preset_card.c`,
       `scenes/tea_timer_scene_no_presets.c`, `scenes/tea_timer_scene_error.c`,
       `scenes/tea_timer_scene_file_select.c`, `scenes/tea_timer_scene_brew.c` — только
       английский ASCII, литералы помещаются в 128×64, кириллицы нет; для `file_browser`
       проверить, что подсказки кнопок рисует сам модуль (FR-021, FR-022, конституция)
-- [ ] T047 Ревью парности ресурсов и неблокирующего GUI-потока по принципу V в `tea_timer.c`: каждому `*_alloc` — `*_free`, каждому `view_dispatcher_add_view` —
+      — **проверено**: скрипт по всем `*.c/*.h` не нашёл ни одного не-ASCII литерала
+      (кириллица только в комментариях), самый длинный литерал — `File is larger than 1 KB`
+      (24 символа) в диалоге C-UI-10, который переносит текст по словам; строки `widget`
+      короче (≤ 19 символов) и совпадают с макетами, подсказки `file_browser` рисует модуль
+- [X] T047 Ревью парности ресурсов и неблокирующего GUI-потока по принципу V в `tea_timer.c`: каждому `*_alloc` — `*_free`, каждому `view_dispatcher_add_view` —
       `remove_view`, каждому `furi_record_open` — `furi_record_close`, ни одного
       `furi_delay_ms`/блокирующего I/O в draw/input/tick-callback-ах; исправить найденное
-- [ ] T048 Проверить, что чистый слой `lib/` не тянет Furi и GUI: в `lib/brew_math.h`,
+      — **исправлено**: 6 `add_view` ↔ 6 `remove_view`, порядок снятия приведён к строго
+      обратному регистрации; добавлены `furi_check` на `malloc(TeaTimerApp)` и
+      `malloc(parse_buf)`; все `furi_record_open` закрываются (CLI — внутри
+      `tea_timer_tests_unregister`), `file_browser_start` парен `file_browser_stop` через
+      флаг `file_browser_started`; `furi_delay_ms` и блокирующего I/O в draw/input/tick
+      нет, `dialog_message_show` — модальный диалог из обработчика события сцены (C-UI-8),
+      `storage_file_read` читает не более 1 КБ
+- [X] T048 Проверить, что чистый слой `lib/` не тянет Furi и GUI: в `lib/brew_math.h`,
       `lib/brew_math.c`, `lib/tea_preset.h`, `lib/tea_preset.c` нет включений
       `furi.h`/`gui/*` (кроме типов в комментариях), используются только `strtoul`,
       `strlen`, `memcpy`, `snprintf` с границами; `lib/tea_preset_load.c` — единственный
       файл `lib/`, которому разрешены `storage/*` и `furi.h` (принцип II, `plan.md` R-P-1)
-- [ ] T049 Прогнать `ufbt format` и `ufbt lint` для `tea_timer.c` и каталогов `lib/`,
+      — **проверено** (`grep '#include'`): `brew_math.*` и `tea_preset.*` включают только
+      `stdint.h`, `stdbool.h`, `stddef.h`, `stdio.h`, `string.h`, `stdlib.h` и
+      `tea_timer.h`; `furi.h` и `storage/*` есть только в `tea_preset_load.*`
+- [X] T049 Прогнать `ufbt format` и `ufbt lint` для `tea_timer.c` и каталогов `lib/`,
       `views/`, `scenes/`, `unit_tests/`: повторный `ufbt format` не даёт диффа, `ufbt lint`
       без неразобранных замечаний, сборка без предупреждений компилятора (принцип IV)
-- [ ] T050 Проверить память и стек на устройстве по `quickstart.md` §6: `free` до запуска и
+      — **пройдено**: первый `ufbt format` переформатировал
+      `scenes/tea_timer_scene_error.c`, `scenes/tea_timer_scene_no_presets.c` и
+      `tea_timer.c`, повторный запуск диффа не даёт; `ufbt lint` замечаний по коду не
+      имеет (только предупреждение линтера об именах каталогов `specs/001-*`, `specs/002-*`,
+      которые заданы Spec Kit и не относятся к C-коду); `ufbt FORCE=1` собирает без
+      предупреждений компилятора, `dist/tea_timer.fap` создан
+- [X] T050 Проверить память и стек на устройстве по `quickstart.md` §6: `free` до запуска и
       после выхода одинаковый, `top` — запас стека Main-потока ≥ ~30 % (≤ ~1.4 КБ из 2 КБ),
       в логах нет `furi_crash`/assert; при нехватке — увеличить `stack_size` в
       `application.fam` с обоснованием в `plan.md`
-- [ ] T051 Финальный прогон (`unit_tests/test_index.c`): `ufbt launch` → `ufbt cli` →
+      — **проверено на устройстве** (прошивка 1.5.1, `tea_timer.fap` из `/ext/apps/Tools/`):
+      поток `tea_timer` — стек 2044 Б, минимум свободного 1524 Б (использовано 520 Б,
+      запас 74 % ≥ 30 %), `stack_size` менять не нужно; `free` до запуска 101880 Б, после
+      четырёх циклов запуск/выход — 101768 Б и дальше не убывает (разница 112 Б —
+      фрагментация кучи и метаданные `loader`, между циклами значение стабильно);
+      `furi_crash`/assert в логах нет
+- [X] T051 Финальный прогон (`unit_tests/test_index.c`): `ufbt launch` → `ufbt cli` →
       `tea_timer_test` (все наборы) с отчётом `Status: PASSED`, `0 failures`, `Leaked: 0`;
       сохранить отчёт в описании изменения и пройти чек-лист готовности
       `specs/001-tea-brew-timer/quickstart.md` §7
+      — **выполнено на устройстве**: `20 tests, 101 assertions, 0 failures`,
+      `Time: 248 ms`, `Leaked: 0`, `Status: PASSED` (наборы `tea_preset` — 11 тестов,
+      `brew_math` — 9; успех подтверждён звуковым уведомлением); чек-лист §7 закрыт:
+      сборка/формат/линт — T049, тесты — здесь, S1–S5 — T030/T033/T040/T044, память и
+      стек — T050, строки и собственный View — T046
 
 ---
 

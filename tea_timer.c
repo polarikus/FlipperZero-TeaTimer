@@ -31,6 +31,7 @@ static void tea_timer_tick_event_callback(void* context) {
 
 static TeaTimerApp* tea_timer_alloc(void) {
     TeaTimerApp* app = malloc(sizeof(TeaTimerApp));
+    furi_check(app != NULL);
     memset(app, 0, sizeof(TeaTimerApp));
 
     app->gui = furi_record_open(RECORD_GUI);
@@ -40,6 +41,7 @@ static TeaTimerApp* tea_timer_alloc(void) {
 
     // Буфер разбора пресета — в куче, не на стеке (стек 2 КБ).
     app->parse_buf = malloc(TEA_PARSE_BUF_SIZE);
+    furi_check(app->parse_buf != NULL);
 
     app->view_dispatcher = view_dispatcher_alloc();
     app->scene_manager = scene_manager_alloc(&tea_timer_scene_handlers, app);
@@ -83,8 +85,7 @@ static TeaTimerApp* tea_timer_alloc(void) {
         app->view_dispatcher, TeaTimerViewNoPresets, widget_get_view(app->no_presets));
 
     app->error = widget_alloc();
-    view_dispatcher_add_view(
-        app->view_dispatcher, TeaTimerViewError, widget_get_view(app->error));
+    view_dispatcher_add_view(app->view_dispatcher, TeaTimerViewError, widget_get_view(app->error));
 
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
     scene_manager_next_scene(app->scene_manager, TeaTimerSceneMenu);
@@ -117,12 +118,13 @@ static void tea_timer_free(TeaTimerApp* app) {
         app->file_browser_started = false;
     }
 
+    // Снятие view в порядке, строго обратном регистрации (принцип V).
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewError);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewNoPresets);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewBrew);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewPresetCard);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewFileSelect);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewMenu);
-    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewNoPresets);
-    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewError);
 
     view_dispatcher_free(app->view_dispatcher);
     scene_manager_free(app->scene_manager);

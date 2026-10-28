@@ -4,10 +4,8 @@
 #define TAG "TeaTimerError"
 
 /** Кнопка `Retry`: повторная проверка носителя. */
-static void tea_timer_scene_error_retry_callback(
-    GuiButtonType result,
-    InputType type,
-    void* context) {
+static void
+    tea_timer_scene_error_retry_callback(GuiButtonType result, InputType type, void* context) {
     UNUSED(result);
     if(type != InputTypeShort) {
         return;

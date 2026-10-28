@@ -70,11 +70,7 @@ void tea_timer_scene_no_presets_on_enter(void* context) {
     widget_add_string_element(
         widget, 64, 32, AlignCenter, AlignTop, FontSecondary, "apps_data/tea_timer");
     widget_add_button_element(
-        widget,
-        GuiButtonTypeCenter,
-        "Reload",
-        tea_timer_scene_no_presets_reload_callback,
-        app);
+        widget, GuiButtonTypeCenter, "Reload", tea_timer_scene_no_presets_reload_callback, app);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, TeaTimerViewNoPresets);
 }
