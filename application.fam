@@ -1,0 +1,18 @@
+App(
+    appid="tea_timer",
+    name="Tea Timer",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="tea_timer_app",
+    requires=["gui", "storage", "notification", "dialogs", "cli"],
+    stack_size=2 * 1024,
+    fap_version="1.0",
+    fap_category="Tools",
+    fap_icon="images/10px.png",
+    fap_icon_assets="images",
+    fap_description="Tea brewing timer with pour-over presets",
+    fap_author="igordanilov",
+    cdefines=["TEA_TIMER_TESTS"],
+    fap_private_libs=[
+        Lib(name="tea_logic", sources=["*.c"]),
+    ],
+)

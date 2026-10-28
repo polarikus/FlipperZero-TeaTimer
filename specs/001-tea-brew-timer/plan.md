@@ -299,8 +299,22 @@ tea_timer/
 6. Сцены 002: создание пресета (`text_input`, `number_input`, сводка, запись, `popup`).
 7. Прогон полного чек-листа `quickstart.md`, `ufbt format`, `ufbt lint`, отчёт тестов.
 
-## Complexity Tracking
+## Отклонения при реализации (фазы 1–3)
 
+Зафиксированы по факту сборки и прогона на устройстве; не меняют поведение, но
+уточняют пути и размеры из tasks.md.
+
+| Решение по плану/tasks | Факт | Причина |
+|---|---|---|
+| `lib/brew_math.c`, `lib/tea_preset.c`, `lib/tea_preset_load.c` | `lib/tea_logic/*` + `fap_private_libs=[Lib(name="tea_logic", sources=["*.c"])]` | ufbt всегда исключает каталог `lib/` из исходников приложения (`GatherSources([..., "!lib"])`); приватная библиотека — штатный способ держать код в `lib/` |
+| `PresetError.error_field[16]` | `char error_field[24]` | ключ `leaf_g_per_100ml` — 16 символов + `\0`, иначе диалог `Missing field:` обрезал имя |
+| SDK 1.4.3 (API 87.1) | SDK 1.5.1 (API 88.2) | устройство обновлено пользователем до прошивки 1.5.1; SDK выровнен `ufbt update -c release` |
+| `FURI_DEBUG` как флаг тестов | `cdefines=["TEA_TIMER_TESTS"]` в манифесте | ufbt-сборка определяет `FURI_NDEBUG`/`NDEBUG`, `FURI_DEBUG` отсутствует (T006) |
+| `&I_tea_file` из `fap_icon_assets` | `&I_tea_file_10px` при файле `images/tea_file_10px.png` | генератор ассетов сохраняет суффикс размера в имени символа |
+| `view_set_context(app)` внутри `brew_view_alloc()` | устанавливается в `tea_timer.c` после `brew_view_alloc()` | прототип `brew_view_alloc(void)` из T016 не принимает контекст |
+| `BrewViewModel` без служебных полей | добавлено `FuriString* name_string` | `elements_string_fit_width` требует `FuriString`, а аллокации в `draw_callback` запрещены (V) |
+
+## Complexity Tracking
 | Сложность | Почему нужна | Отвергнутая альтернатива |
 |---|---|---|
 | Собственный `brew_view` (Canvas) | нужны `FontBigNumbers` для крупного отсчёта и инверсия плашек `OVER`/счётчика; `widget` этого не умеет (R-UI-2) | `widget` с пересборкой элементов каждую секунду — нет инверсии, мигание, больше кода |

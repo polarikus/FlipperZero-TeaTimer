@@ -50,16 +50,16 @@ description: "Список задач реализации фичи Tea Timer �
 
 **Цель**: создать скелет FAP-проекта и общие типы, от которых зависят все истории.
 
-- [ ] T001 Создать `application.fam`: `appid="tea_timer"`, `name="Tea Timer"`,
+- [X] T001 Создать `application.fam`: `appid="tea_timer"`, `name="Tea Timer"`,
       `apptype=FlipperAppType.EXTERNAL`, `entry_point="tea_timer_app"`,
       `requires=["gui", "storage", "notification", "dialogs", "cli"]`, `stack_size=2*1024`,
       `fap_version="1.0"` (строкой), `fap_category="Tools"`, `fap_icon="images/10px.png"`,
       `fap_icon_assets="images"` (генерирует `tea_timer_icons.h` с `I_tea_file`),
       `fap_author`, `fap_description="Tea brewing timer with pour-over presets"` (принцип I)
-- [ ] T002 [P] Добавить иконки в `images/`: `10px.png` (fap_icon) и `tea_file_10px.png`
+- [X] T002 [P] Добавить иконки в `images/`: `10px.png` (fap_icon) и `tea_file_10px.png`
       (иконка `.tea`-файла для `file_browser`) — 10×10 px, 1 бит/пиксель, монохромные;
       обе попадают в `fap_icon_assets`
-- [ ] T003 [P] Создать `tea_timer.h`: `#define TEA_NAME_MAX 24`, `#define TEA_PATH_MAX 128`,
+- [X] T003 [P] Создать `tea_timer.h`: `#define TEA_NAME_MAX 24`, `#define TEA_PATH_MAX 128`,
       `#define TEA_PARSE_BUF_SIZE 1025` (1024 байта файла + `\0`),
       `enum TeaPresetResult` (`TeaPresetResultOK`, `...ERR_NOT_FOUND`, `...ERR_TOO_LARGE`,
       `...ERR_NO_FIELD`, `...ERR_BAD_NUMBER`, `...ERR_OUT_OF_RANGE`,
@@ -70,18 +70,18 @@ description: "Список задач реализации фичи Tea Timer �
       `uint16_t leaf_tenths_g` (1–500), `uint16_t first_pour_sec` (1–3600),
       `uint16_t increment_sec` (0–600), `uint8_t max_pours` (1–99), `char path[TEA_PATH_MAX]`;
       объявление `tea_timer_app(void* p)`
-- [ ] T004 [P] Создать `tea_timer_custom_event.h`: `enum TeaTimerCustomEvent` —
+- [X] T004 [P] Создать `tea_timer_custom_event.h`: `enum TeaTimerCustomEvent` —
       `TeaTimerEventFileSelected`, `TeaTimerEventReloadPressed`, `TeaTimerEventBrewStart`,
       `TeaTimerEventBrewStop`, `TeaTimerEventTick` (тик 1 Гц, пересылается из `tea_timer.c`);
       `MenuSelected` / `SkippedClosed` не объявляются — потребителей нет
       (`data-model.md` §4, `contracts/ui-screens.md` C-UI-0…C-UI-7)
-- [ ] T005 Создать `tea_timer_i.h`: `enum TeaTimerViewId`, `typedef struct TeaTimerApp` с
+- [X] T005 Создать `tea_timer_i.h`: `enum TeaTimerViewId`, `typedef struct TeaTimerApp` с
       полями `Gui*`, `NotificationApp*`, `Storage*`, `DialogsApp*`, `ViewDispatcher*`,
       `SceneManager*`, `FuriString* file_path`, `Submenu*`, `FileBrowser*`, `Widget*`
       (карточка: IDLE + Start), `Widget*` (нет пресетов), `View*` (brew_view),
       `BrewSession session`, `char* parse_buf` (буфер разбора 1025 байт **в куче**);
       комментарии — на русском (принципы II, V). Поля `session_dirty` нет — не используется
-- [ ] T006 Проверить фактический флаг отладочной сборки в `application.fam`: выполнить `ufbt VERBOSE=1` и
+- [X] T006 Проверить фактический флаг отладочной сборки в `application.fam`: выполнить `ufbt VERBOSE=1` и
       убедиться, определяется ли `FURI_DEBUG`; если нет — добавить
       `cdefines=["TEA_TIMER_TESTS"]` в `application.fam`, а в коде регистрировать тесты под
       `#if defined(FURI_DEBUG) || defined(TEA_TIMER_TESTS)` (research.md R-B-3)
@@ -95,7 +95,7 @@ description: "Список задач реализации фичи Tea Timer �
 
 **⚠️ КРИТИЧНО**: ни одна история не начинается, пока эта фаза не завершена.
 
-- [ ] T007 [P] Создать `lib/brew_math.h`: `typedef enum { BrewPhaseIDLE, BrewPhaseRUNNING,
+- [X] T007 [P] Создать `lib/brew_math.h`: `typedef enum { BrewPhaseIDLE, BrewPhaseRUNNING,
       BrewPhaseDONE } BrewPhase`; `typedef struct BrewSession` с `bool has_preset`,
       `TeaPreset preset`, `uint16_t completed_pours`, `uint16_t next_pour_sec`,
       `BrewPhase phase`, `uint32_t deadline_tick`; константа `BREW_NEXT_POUR_MAX 63000`;
@@ -104,7 +104,7 @@ description: "Список задач реализации фичи Tea Timer �
       `brew_session_remaining_sec(uint32_t now_tick, uint32_t deadline_tick)`,
       `brew_session_complete`, `brew_session_abort`, `brew_session_over_limit`,
       `brew_math_format_time` (без зависимостей от Furi)
-- [ ] T008 [P] Реализовать `lib/brew_math.c` (чистая логика, только libc с границами):
+- [X] T008 [P] Реализовать `lib/brew_math.c` (чистая логика, только libc с границами):
       `brew_math_pour_sec(prev, increment)` = `prev + increment` с ограничением
       `BREW_NEXT_POUR_MAX`; `brew_session_complete()` — **единственное** место, где
       `completed_pours++`, а `next_pour_sec` вычисляется только через
@@ -120,10 +120,10 @@ description: "Список задач реализации фичи Tea Timer �
       `brew_session_start(now_tick, session)` — `deadline_tick = now_tick +
       next_pour_sec * 1000`, `phase = RUNNING`, повторный вызов в `RUNNING` игнорируется,
       без `furi_get_tick()` внутри
-- [ ] T009 [P] Создать `lib/tea_preset.h`: прототип
+- [X] T009 [P] Создать `lib/tea_preset.h`: прототип
       `TeaPresetResult tea_preset_parse_buf(const char* buf, size_t len, TeaPreset* out,
       char* error_field, size_t error_field_size)` (слой без Storage)
-- [ ] T010 Реализовать `lib/tea_preset.c` по алгоритму
+- [X] T010 Реализовать `lib/tea_preset.c` по алгоритму
       `contracts/tea-file-format.md` (шаги 2, 4–11): снятие BOM `EF BB BF`, разбиение по
       `\n`, обрезка `\r` и пробелов/табов, пропуск пустых строк и строк с `#`, разделение по
       первому `:`, пять обязательных ключей ровно по одному разу
@@ -135,13 +135,13 @@ description: "Список задач реализации фичи Tea Timer �
       `ERR_EMPTY_NAME`, недопустимые символы `name` (не латиница/цифры/пробел/`_`) →
       `ERR_BAD_NAME`, `name` длиннее 24 байт → `ERR_OUT_OF_RANGE`, все значения вне
       диапазонов FR-004 → `ERR_OUT_OF_RANGE`; неизвестные ключи игнорируются
-- [ ] T011 [P] Вендорить `unit_tests/minunit.h`: `MU_TEST`, `MU_RUN_TEST`, `MU_RUN_SUITE`,
+- [X] T011 [P] Вендорить `unit_tests/minunit.h`: `MU_TEST`, `MU_RUN_TEST`, `MU_RUN_SUITE`,
       `MU_REPORT`, `mu_assert`, `mu_assert_int_eq`, `mu_assert_string_eq`,
       `mu_assert_mem_eq`, `MINUNIT_MESSAGE_LEN 256`; вывод (`MU_PRINT`/`minunit_print_fail`)
       — через `snprintf` + `pipe_send`, без `printf`/`puts` (не экспортируются в FAP)
-- [ ] T012 [P] Создать `unit_tests/minunit_vars.h`: глобальные `minunit_run`,
+- [X] T012 [P] Создать `unit_tests/minunit_vars.h`: глобальные `minunit_run`,
       `minunit_assert`, `minunit_fail`, `minunit_status`, `minunit_last_message[256]`
-- [ ] T013 Создать `unit_tests/test_index.h` и `unit_tests/test_index.c`: реестр
+- [X] T013 Создать `unit_tests/test_index.h` и `unit_tests/test_index.c`: реестр
       `typedef struct { const char* name; int (*entry)(void); } UnitTest;` с наборами
       `tea_preset` и `brew_math`; `tea_timer_tests_register()` открывает `RECORD_CLI` и
       вызывает `cli_registry_add_command_ex(registry, "tea_timer_test",
@@ -152,7 +152,7 @@ description: "Список задач реализации фичи Tea Timer �
       прогона: `(uint32_t)(stop - start)`), `Leaked: <delta>` по `memmgr_get_free_heap()`
       до/после, `Status: PASSED|FAILED`, и отправляет `sequence_success` / `sequence_error`
       (принцип VIII, research.md R-B-2/R-B-3)
-- [ ] T014 [P] Создать `unit_tests/lib_tests/brew_math/brew_math_test.c` —
+- [X] T014 [P] Создать `unit_tests/lib_tests/brew_math/brew_math_test.c` —
       `run_minunit_test_brew_math()`: `next = prev + increment`, отсутствие роста при
       `increment_sec = 0`, ограничение `63000`, форматирование `00:20` / `01:00:00` /
       `17:30:00`, `over_limit` при `completed > max`, инкремент счётчика **только** в
@@ -165,7 +165,7 @@ description: "Список задач реализации фичи Tea Timer �
       `completed_pours = 0`, `next_pour_sec = first_pour_sec`, `phase = IDLE`,
       `has_preset = true`; `over_limit` на границе (`completed == max` → `false`,
       `completed == max + 1` → `true`) (покрывает US1, US2, US4; принцип VIII)
-- [ ] T015 [P] Создать `unit_tests/lib_tests/tea_preset/tea_preset_test.c` —
+- [X] T015 [P] Создать `unit_tests/lib_tests/tea_preset/tea_preset_test.c` —
       `run_minunit_test_tea_preset()`: эталонный файл из
       `contracts/tea-file-format.md` (`leaf_tenths_g = 50`), `\r\n`, BOM, комментарии и
       пустые строки, границы `0.1`/`50.0`, `1`/`3600`, `0`/`600`, `1`/`99`,
@@ -175,12 +175,12 @@ description: "Список задач реализации фичи Tea Timer �
       `ERR_EMPTY_NAME`, дубликат `name` → `ERR_DUPLICATE_FIELD`, неизвестный ключ `temp_c`
       игнорируется, `name` длиннее 24 байт → `ERR_OUT_OF_RANGE`, `name: Green-Tea` →
       `ERR_BAD_NAME` (покрывает US1, US3)
-- [ ] T016 Создать `views/brew_view.h`: `typedef struct BrewViewModel` из `data-model.md` §4
+- [X] T016 Создать `views/brew_view.h`: `typedef struct BrewViewModel` из `data-model.md` §4
       (`phase`, `char name[25]`, `completed_pours`, `max_pours`, `over_limit`,
       `leaf_tenths_g`, `pour_number`, `pour_sec`, `remaining_sec`); прототипы
       `brew_view_alloc()`, `brew_view_free(BrewView*)`, `brew_view_get_view(BrewView*)`,
       `brew_view_update(BrewView*, const BrewSession*)`
-- [ ] T017 Создать `views/brew_view.c` — каркас: `view_alloc()` +
+- [X] T017 Создать `views/brew_view.c` — каркас: `view_alloc()` +
       `view_allocate_model(view, ViewModelTypeLockFree, sizeof(BrewViewModel))`,
       `view_set_context(app)`, `view_set_draw_callback`, `view_set_input_callback`: на
       `InputTypeShort` + `InputKeyOk` view **не меняет сессию**, а пересылает
@@ -190,15 +190,15 @@ description: "Список задач реализации фичи Tea Timer �
       `brew_view_update()` копирует поля сессии и форматирует время через
       `brew_math_format_time()`; в `draw_callback` — только чтение модели и отрисовка
       подсказок кнопок; без `alloc` внутри draw (принцип V)
-- [ ] T018 Создать `scenes/tea_timer_scene_config.h` (макрос со списком сцен) и
+- [X] T018 Создать `scenes/tea_timer_scene_config.h` (макрос со списком сцен) и
       `scenes/tea_timer_scene.h` (`enum TeaTimerScene`, объявления
       `tea_timer_scene_<name>_on_enter/on_event/on_exit`), `scenes/tea_timer_scene.c`
       (массив `tea_timer_scene_handlers[]`; на этой фазе — только `Menu`)
-- [ ] T019 Создать `scenes/tea_timer_scene_menu.c` — `submenu`: `submenu_reset`,
+- [X] T019 Создать `scenes/tea_timer_scene_menu.c` — `submenu`: `submenu_reset`,
       `submenu_set_header(sm, "Tea Timer")`, `submenu_add_item(sm, "Presets", 0, cb, app)`;
       пункт `New preset` и переходы в 002 добавляются отдельной фичей; BACK в корневой сцене
       → `view_dispatcher_stop` (C-UI-1, FR-023)
-- [ ] T020 Создать `tea_timer.c` — жизненный цикл и владение ресурсами (порядок из
+- [X] T020 Создать `tea_timer.c` — жизненный цикл и владение ресурсами (порядок из
       `plan.md`, раздел «Порядок владения ресурсами»): `furi_record_open` × 4, парные
       `*_alloc`, `view_dispatcher_alloc`, `scene_manager_alloc`, `view_dispatcher_set_custom_event_callback`,
       `view_dispatcher_set_navigation_event_callback`,
@@ -208,7 +208,7 @@ description: "Список задач реализации фичи Tea Timer �
       `tea_timer_free()` — строго обратный порядок, `tea_timer_tests_unregister()` под
       `#if defined(FURI_DEBUG) || defined(TEA_TIMER_TESTS)`; тик-callback пересылает
       `TeaTimerEventTick` в активную сцену через `view_dispatcher_send_custom_event`
-- [ ] T021 Проверить каркас на устройстве (`tea_timer.c`, `application.fam`): `ufbt` (без предупреждений), `ufbt launch`,
+- [X] T021 Проверить каркас на устройстве (`tea_timer.c`, `application.fam`): `ufbt` (без предупреждений), `ufbt launch`,
       BACK корректно выходит; затем `ufbt cli` → `tea_timer_test` печатает отчёт
       `Status: PASSED`, `Leaked: 0` (проверить также `unit_tests/test_index.c`)
 
@@ -227,7 +227,7 @@ description: "Список задач реализации фичи Tea Timer �
 `/ext/apps_data/tea_timer/`, открыть приложение, выбрать пресет, `Start`, дождаться сигнала,
 проверить `Pours 1 / 6` и `Pour 2 00:25`.
 
-- [ ] T022 [P] [US1] Создать `lib/tea_preset_load.h` и `lib/tea_preset_load.c` — слой
+- [X] T022 [P] [US1] Создать `lib/tea_preset_load.h` и `lib/tea_preset_load.c` — слой
       Storage над `tea_preset_parse_buf()`; прототип:
       `TeaPresetResult tea_preset_load(Storage* storage, const char* path, char* buf,
       size_t buf_size, TeaPreset* out, PresetError* err)` (без зависимости от
@@ -236,7 +236,7 @@ description: "Список задач реализации фичи Tea Timer �
       `storage_file_size() > 1024` → `ERR_TOO_LARGE` без чтения; чтение в `buf` (1025 байт,
       в куче) + `\0`; вызов парсера; `storage_file_close()` **всегда**, на всех ветках
       (contracts/tea-file-format.md, storage-layout.md)
-- [ ] T023 [P] [US1] Создать `scenes/tea_timer_scene_file_select.c` — `file_browser`:
+- [X] T023 [P] [US1] Создать `scenes/tea_timer_scene_file_select.c` — `file_browser`:
       `#include "tea_timer_icons.h"`; `furi_string_alloc_set(APP_DATA_PATH(""))` в `alloc`,
       `file_browser_alloc(result_path)`,
       `file_browser_configure(fb, ".tea", APP_DATA_PATH(""), false, true, &I_tea_file, true)`,
@@ -244,21 +244,21 @@ description: "Список задач реализации фичи Tea Timer �
       TeaTimerEventFileSelected)`; `on_enter` — `file_browser_start` с корнем
       `APP_DATA_PATH("")`, `on_exit` — `file_browser_stop`; BACK в корне → `SceneMenu`;
       лог `tea_timer: file select at /ext/apps_data/tea_timer` (C-UI-2, FR-002)
-- [ ] T024 [P] [US1] Создать `scenes/tea_timer_scene_preset_card.c` — `widget`: название
+- [X] T024 [P] [US1] Создать `scenes/tea_timer_scene_preset_card.c` — `widget`: название
       (`FontPrimary`, центр), `Leaf N.N g/100ml`, `Pours X / N`, `Pour N  mm:ss`,
       `widget_add_button_element(w, GuiButtonTypeCenter, "Start", cb, app)`; BACK →
       `SceneFileSelect`; карточка и есть экран заваривания в ожидании (`IDLE`), отдельного
       промежуточного экрана нет; `Start` → переход в `SceneBrew`, сам отсчёт стартует по
       `TeaTimerEventBrewStart` (T026); создание и сброс сессии — только в T024a/T024b
       (C-UI-3, FR-009/FR-010, SC-001)
-- [ ] T024a [US1] Обработать выбор файла в `scenes/tea_timer_scene_file_select.c`
+- [X] T024a [US1] Обработать выбор файла в `scenes/tea_timer_scene_file_select.c`
       (основной путь US1, FR-001/FR-003): Custom `TeaTimerEventFileSelected` →
       `tea_preset_load(app->storage, furi_string_get_cstr(app->file_path), app->parse_buf,
       TEA_PARSE_BUF_SIZE, &app->session.preset, &err)`; при `OK` — сброс/создание сессии
       (T024b) и `scene_manager_next_scene(sm, TeaTimerScenePresetCard)`; при `!= OK` —
       диалог C-UI-10 из T038, остаёмся в `SceneFileSelect`. Зависит от T010, T022, T024 —
       метку `[P]` не ставить; ветку ошибки (T038) не дублировать, вызывать её функцию
-- [ ] T024b [US1] Реализовать правило сессии (FR-016, Clarifications 2026-10-28): серия
+- [X] T024b [US1] Реализовать правило сессии (FR-016, Clarifications 2026-10-28): серия
       сохраняется между открытиями одного файла и сбрасывается при выборе другого.
       В обработчике из T024a — если `!app->session.has_preset` **или**
       `strcmp(app->file_path, app->session.preset.path) != 0`, вызвать
@@ -266,13 +266,13 @@ description: "Список задач реализации фичи Tea Timer �
       `session.preset.path` заполняется из выбранного `file_path` (обрезка до
       `TEA_PATH_MAX - 1`). При совпадении пути серия продолжается без сброса; отсчёт не
       возобновляется автоматически
-- [ ] T025 [US1] Расширить `views/brew_view.c` раскладками: `RUNNING` — остаток шрифтом
+- [X] T025 [US1] Расширить `views/brew_view.c` раскладками: `RUNNING` — остаток шрифтом
       `FontBigNumbers` по центру, `Pours X / N`, подсказка `OK: stop`;
       `DONE` — инверсный баннер `Time is up!`, `Pours X / N`, `Pour N+1  mm:ss`,
       подсказка `OK: start next pour`; состояние `IDLE` в `brew_view` не рисуется —
       ожидание показывает карточка (T024); обрезка длинного названия —
       `elements_string_fit_width(canvas, furi_string, width)` (C-UI-4, FR-009, FR-013)
-- [ ] T026 [US1] Создать `scenes/tea_timer_scene_brew.c`: `on_enter` — `brew_view_update`
+- [X] T026 [US1] Создать `scenes/tea_timer_scene_brew.c`: `on_enter` — `brew_view_update`
       из сессии + `view_dispatcher_switch_to_view(vd, TeaTimerViewBrew)` (состояние
       `RUNNING` — продолжение отсчёта, `DONE` — показ завершения); `on_event`:
       Custom `TeaTimerEventTick` — пересчёт `remaining_sec` по `deadline_tick`/`furi_get_tick()`,
@@ -284,23 +284,23 @@ description: "Список задач реализации фичи Tea Timer �
       `scene_manager_previous_scene()` (на карточку; счётчик и время пролива не меняются);
       BACK — то же, что `BrewStop`; логи `tea_timer: pour <n> start <sec>s` / `abort` /
       `done <sec>s` (FR-011…FR-016, R-T-1)
-- [ ] T027 [US1] Добавить сигнал завершения в `scenes/tea_timer_scene_brew.c`: `static const NotificationSequence
+- [X] T027 [US1] Добавить сигнал завершения в `scenes/tea_timer_scene_brew.c`: `static const NotificationSequence
       tea_timer_sequence_done` (две `message_note_*` + `message_vibro_on`/`_off` +
       `message_delay_*`) и `tea_timer_sequence_done_reset` (`sequence_reset_sound`,
       `sequence_reset_vibro`); отправка ровно один раз на переходе `RUNNING → DONE` через
       `notification_message(app->notification, ...)`
       (R-T-2, FR-019)
-- [ ] T028 [US1] Зарегистрировать новые сцены и переходы в `scenes/tea_timer_scene_config.h`: добавить `TeaTimerSceneFileSelect`,
+- [X] T028 [US1] Зарегистрировать новые сцены и переходы в `scenes/tea_timer_scene_config.h`: добавить `TeaTimerSceneFileSelect`,
       `TeaTimerScenePresetCard`, `TeaTimerSceneBrew` в `scenes/tea_timer_scene.c`; в
       `scenes/tea_timer_scene_menu.c` — обработка
       `Presets` → `SceneFileSelect`; в `tea_timer.c` — `view_dispatcher_add_view` /
       `remove_view` для `file_browser` и `widget` карточки (парность, принцип V)
-- [ ] T029 [US1] Дополнить `unit_tests/lib_tests/tea_preset/tea_preset_test.c` тестами
+- [X] T029 [US1] Дополнить `unit_tests/lib_tests/tea_preset/tea_preset_test.c` тестами
       `tea_preset_load()`: создать `APP_DATA_PATH("test")` через `Storage`, записать файл,
       прочитать (эталон → `OK`), проверить границу 1024/1025 байт (`ERR_TOO_LARGE`),
       несуществующий путь (`ERR_NOT_FOUND`), удалить файл и каталог в конце теста
       (принцип VIII: тест готовит и убирает данные сам)
-- [ ] T030 [US1] Проверить US1: `ufbt`, `ufbt launch`, сценарий S1 из `quickstart.md`
+- [X] T030 [US1] Проверить US1: `ufbt`, `ufbt launch`, сценарий S1 из `quickstart.md`
       (включая `tea_timer_test` → `Status: PASSED`, `Leaked: 0`) — правки по результатам
       вносятся в `scenes/tea_timer_scene_brew.c` и `views/brew_view.c`
 

@@ -1,0 +1,31 @@
+# Сборка ufbt и артефакты FAP
+dist/
+build/
+*.fap
+*.elf
+*.map
+*.dfu
+*.bin
+*.o
+*.a
+*.d
+compile_commands.json
+.clangd/
+.compiledb/
+
+# IDE
+.idea/
+.vscode/
+
+# macOS / системный мусор
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*.log
+
+# Временные файлы тестов
+*.tea.bak
+
+# Python-кэш скриптов Spec Kit
+__pycache__/
