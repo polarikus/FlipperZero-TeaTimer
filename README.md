@@ -4,7 +4,8 @@ A pour-over tea brewing timer for the Flipper Zero. It keeps the count of pours 
 session, grows every next pour duration by a per-preset increment, and plays a single
 sound/vibration when the pour is done.
 
-Presets are plain text `.tea` files that you create on a computer and copy to the SD card.
+Presets are plain text `.tea` files. You can create, edit and delete them right on the
+Flipper, or write them on a computer and copy them to the SD card.
 
 ## Requirements
 
@@ -35,8 +36,9 @@ Preset files live in a single directory on the SD card:
 /ext/apps_data/tea_timer/
 ```
 
-Create the directory and put one or more `.tea` files there. The app lists only files with
-the `.tea` extension (the system file browser is used for selection).
+Create the directory and put one or more `.tea` files there, or create them on the device
+(see below). The app lists only files with the `.tea` extension (the system file browser is
+used for selection).
 
 If the directory is missing or contains no `.tea` files, the app shows `No presets found`
 with a `Reload` button. If the SD card is not available, it shows `SD card not found` and
@@ -77,16 +79,59 @@ If a file is invalid, the app shows a short dialog with the reason (for example
 `Missing field: max_pours`, `Out of range: first_pour_sec`, `File is larger than 1 KB`) and
 returns to the file browser. The other presets stay usable.
 
+### Creating a preset on the device
+
+Main menu → `New preset`. The form walks through five steps:
+
+1. `Tea name` — 1–24 characters: Latin letters, digits, space, `_` (the on-screen keyboard).
+2. `Leaf, 0.1 g/100ml` — 0.1–50.0 g (entered in tenths of a gram).
+3. `First pour, sec` — 1–3600 s.
+4. `Step, sec` — 0–600 s (the increment added to every next pour).
+5. `Max pours` — 1–99.
+
+The summary screen shows the entered values with a `Save` button. On `Save` the app writes
+the preset to `/ext/apps_data/tea_timer/`, reads it back to verify, and shows `Saved` with
+the file name; `OK` returns to the preset list. The file name is derived from the tea name
+(`Green Tea` → `green_tea.tea`). If that name is already taken, the app adds a suffix
+(`green_tea_2.tea`, `green_tea_3.tea`, …) — nothing is overwritten.
+
+`BACK` on any step returns to the previous step (from the first step — to the main menu)
+and leaves no files behind. Invalid values are rejected with a `Bad value` dialog that
+shows the field and its allowed range; the entered values are kept.
+
+### Editing and deleting a preset
+
+On the preset card press `>` to open the actions menu:
+
+- `Edit` — opens the same form pre-filled with the current values. `Save` writes to the
+  same file (the file name does not change); the pour counter of an active session is kept.
+  `BACK` on the first step returns to the actions menu without touching the file.
+- `Delete` — shows a confirmation with the tea name, the file name and a `No`/`Yes` choice.
+  `No` (center, also `BACK`) keeps the file; `Yes` (right) removes it from the SD card, shows
+  `Deleted` and returns to the preset list. Deleting the preset that is currently being
+  brewed also resets the pour session.
+
+If a write or delete fails (for example, the SD card is missing), the app shows a
+`Cannot save` / `Cannot delete` dialog and never loses the existing file.
+
 ## Controls
 
 | Screen | Button | Action |
 |---|---|---|
-| Main menu | `OK` / `Right` | Open the preset list |
+| Main menu | `OK` / `Right` | Open the highlighted item: `Presets` list or `New preset` form |
 | Main menu | `BACK` | Exit the app |
 | File browser | `OK` / `Right` | Open the highlighted preset |
 | File browser | `BACK` | Back to the main menu |
 | Preset card | `OK` (center `Start`) | Start the pour immediately |
+| Preset card | `>` (right) | Open the actions menu (`Edit` / `Delete`) |
 | Preset card | `BACK` | Back to the file browser |
+| Actions menu | `OK` / `Right` | Run `Edit` or `Delete` for the current preset |
+| Actions menu | `BACK` | Back to the preset card |
+| Preset form | `OK` | Confirm the current step / `Save` on the summary |
+| Preset form | `BACK` | Previous step (file is not written) |
+| Delete confirmation | `OK` (center `No`) / `BACK` | Keep the file, back to the preset card |
+| Delete confirmation | `>` (right `Yes`) | Delete the file |
+| `Saved` / `Deleted` | `OK` / `BACK` | Back to the preset list |
 | Brewing (`RUNNING`) | `OK` | Stop the pour; the pour counter does not change |
 | Brewing (`RUNNING`) | `BACK` | Stop and go back to the preset card |
 | `Time is up!` (`DONE`) | `OK` | Start the next pour |
@@ -117,9 +162,10 @@ ufbt cli            # in another terminal — CLI session
 Inside the CLI:
 
 ```
-tea_timer_test              # all suites
-tea_timer_test tea_preset   # .tea parser only
-tea_timer_test brew_math    # pour arithmetic only
+tea_timer_test               # all suites
+tea_timer_test tea_preset    # .tea parser only
+tea_timer_test brew_math     # pour arithmetic only
+tea_timer_test preset_write  # on-device preset write/delete logic
 ```
 
 Expected report:
@@ -127,8 +173,8 @@ Expected report:
 ```
 test_reference_file()
 ...
-20 tests, 101 assertions, 0 failures
-Time: 248 ms
+33 tests, 198 assertions, 0 failures
+Time: 1502 ms
 Leaked: 0
 Status: PASSED
 ```

@@ -115,7 +115,7 @@ SCREENS = {
             {"text": "Max 6 pours", "y": 39, "align": "c"},
         ],
         "button": {"label": "START", "top": 42, "h": 11, "inv": True},
-        "hint": ">: edit",
+        "hint": ">: actions",
     },
     "04-name-keyboard": {
         "caption": "Создание пресета: ввод названия стандартной клавиатурой",
@@ -191,7 +191,29 @@ SCREENS = {
                 {"text": "in apps_data/tea_timer", "y": 45, "size": 8},
             ],
         },
-        "hint": "OK: open preset",
+        "hint": "OK: file list",
+    },
+    "09-preset-actions": {
+        "caption": "Меню действий на карточке пресета: правка или удаление",
+        "icons": True,
+        "lines": [
+            {"text": "Green Tea", "y": Y_TITLE, "align": "c"},
+            {"text": "Edit", "y": 27, "inv": True},
+            {"text": "Delete", "y": 39},
+        ],
+        "hint": "OK: select",
+    },
+    "10-delete-confirm": {
+        "caption": "Подтверждение удаления пресета (по умолчанию — No)",
+        "icons": False,
+        "dialog": {
+            "title": "Delete preset",
+            "lines": [
+                {"text": "Green Tea", "y": 33, "size": 9, "bold": True},
+                {"text": "green_tea.tea", "y": 45, "size": 8},
+            ],
+        },
+        "hint": "OK: No   >: Yes",
     },
 }
 

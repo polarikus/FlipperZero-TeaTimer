@@ -5,5 +5,5 @@
 <text x="64" y="17" font-family="Menlo, Consolas, DejaVu Sans Mono, monospace" font-size="9" fill="#F4F1E3" text-anchor="middle">Saved</text>
 <text x="64" y="34" font-family="Menlo, Consolas, DejaVu Sans Mono, monospace" font-size="10" fill="#1A1A1A" text-anchor="middle" font-weight="bold">green_tea.tea</text>
 <text x="64" y="45" font-family="Menlo, Consolas, DejaVu Sans Mono, monospace" font-size="8" fill="#1A1A1A" text-anchor="middle">in apps_data/tea_timer</text>
-<text x="64" y="63" font-family="Menlo, Consolas, DejaVu Sans Mono, monospace" font-size="9" fill="#1A1A1A" text-anchor="middle">OK: open preset</text>
+<text x="64" y="63" font-family="Menlo, Consolas, DejaVu Sans Mono, monospace" font-size="9" fill="#1A1A1A" text-anchor="middle">OK: file list</text>
 </svg>

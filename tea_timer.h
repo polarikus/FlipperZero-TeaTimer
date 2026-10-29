@@ -19,6 +19,12 @@ extern "C" {
 /** Максимальный допустимый размер файла пресета. */
 #define TEA_FILE_MAX_SIZE 1024
 
+/** Максимальная длина основы имени файла пресета (`slug`). */
+#define TEA_SLUG_MAX 24
+
+/** Суффикс временного файла при записи пресета. */
+#define TEA_TMP_SUFFIX ".tmp"
+
 /** Результат разбора и загрузки файла пресета. */
 typedef enum {
     TeaPresetResultOK, /**< Файл корректен */
@@ -48,6 +54,26 @@ typedef struct {
     uint8_t max_pours; /**< Рекомендованное число проливов: 1–99 */
     char path[TEA_PATH_MAX]; /**< Путь к файлу пресета на SD-карте */
 } TeaPreset;
+
+/** Результат записи пресета в файл. */
+typedef enum {
+    PresetSaveOK, /**< Файл записан и проверен обратным чтением */
+    PresetSaveErrDraft, /**< Черновик не прошёл проверку */
+    PresetSaveErrNoDir, /**< Каталог приложения не создан */
+    PresetSaveErrOpen, /**< Временный файл не открылся на запись */
+    PresetSaveErrWrite, /**< Записано меньше байт, чем нужно */
+    PresetSaveErrVerify, /**< Обратное чтение не совпало с черновиком */
+    PresetSaveErrReplace, /**< Не удалось подменить целевой файл */
+    PresetSaveErrNoName, /**< Нет свободного имени в диапазоне `_2`…`_99` */
+} PresetSaveResult;
+
+/** Результат удаления пресета. */
+typedef enum {
+    PresetDeleteOK, /**< Файл удалён */
+    PresetDeleteErrNotFound, /**< Файла уже нет на карте */
+    PresetDeleteErrRemove, /**< `storage_common_remove` вернул ошибку */
+    PresetDeleteErrNoCard, /**< SD-карта недоступна */
+} PresetDeleteResult;
 
 /** Точка входа приложения. */
 int32_t tea_timer_app(void* p);

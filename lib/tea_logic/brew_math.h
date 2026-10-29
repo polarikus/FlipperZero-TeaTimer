@@ -51,6 +51,9 @@ bool brew_session_complete(BrewSession* session);
 /** Прервать пролив: RUNNING → IDLE без изменения счётчика и времени. */
 void brew_session_abort(BrewSession* session);
 
+/** Полный сброс сессии (удаление активного пресета): счётчик 0, фаза IDLE, путь пуст. */
+void brew_session_clear(BrewSession* session);
+
 /** true, если завершённых проливов больше рекомендованного числа. */
 bool brew_session_over_limit(const BrewSession* session);
 

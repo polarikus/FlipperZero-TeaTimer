@@ -1,10 +1,14 @@
 #include "../tea_timer_i.h"
+#include "../lib/tea_logic/tea_preset_save.h"
 #include "tea_timer_scene.h"
 
 #define TAG "TeaTimerMenu"
 
 /** Индекс пункта `Presets` в главном меню. */
 #define TEA_TIMER_MENU_INDEX_PRESETS 0
+
+/** Индекс пункта `New preset` в главном меню. */
+#define TEA_TIMER_MENU_INDEX_NEW_PRESET 1
 
 /**
  * Маршрутизация перед показом списка файлов (storage-layout.md, «Матрица состояний носителя»):
@@ -33,6 +37,16 @@ static void tea_timer_scene_menu_submenu_callback(void* context, uint32_t index)
     TeaTimerApp* app = context;
     if(index == TEA_TIMER_MENU_INDEX_PRESETS) {
         tea_timer_show_presets(app);
+    } else if(index == TEA_TIMER_MENU_INDEX_NEW_PRESET) {
+        // Создание: умолчания 5.0 / 20 / 5 / 6 (FR-005), имя пустое.
+        memset(&app->draft, 0, sizeof(app->draft));
+        app->draft.leaf_tenths_g = TEA_DEFAULT_LEAF_TENTHS;
+        app->draft.first_pour_sec = TEA_DEFAULT_FIRST_POUR_SEC;
+        app->draft.increment_sec = TEA_DEFAULT_INCREMENT_SEC;
+        app->draft.max_pours = TEA_DEFAULT_MAX_POURS;
+        app->editing = false;
+        app->edit_step = TeaEditStepName;
+        scene_manager_next_scene(app->scene_manager, TeaTimerSceneEditName);
     }
 }
 
@@ -45,6 +59,12 @@ void tea_timer_scene_menu_on_enter(void* context) {
         app->submenu,
         "Presets",
         TEA_TIMER_MENU_INDEX_PRESETS,
+        tea_timer_scene_menu_submenu_callback,
+        app);
+    submenu_add_item(
+        app->submenu,
+        "New preset",
+        TEA_TIMER_MENU_INDEX_NEW_PRESET,
         tea_timer_scene_menu_submenu_callback,
         app);
 

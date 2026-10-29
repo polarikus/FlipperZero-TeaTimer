@@ -19,6 +19,21 @@ static void tea_timer_scene_preset_card_start_callback(
     view_dispatcher_send_custom_event(app->view_dispatcher, TeaTimerEventBrewStart);
 }
 
+/** Кнопка `>`: меню действий над пресетом (`Edit`/`Delete`, C-UI-3 дополнение 002). */
+static void tea_timer_scene_preset_card_actions_callback(
+    GuiButtonType result,
+    InputType type,
+    void* context) {
+    UNUSED(result);
+    if(type != InputTypeShort) {
+        return;
+    }
+
+    TeaTimerApp* app = context;
+    FURI_LOG_I(TAG, "actions for '%s'", app->session.preset.name);
+    scene_manager_next_scene(app->scene_manager, TeaTimerSceneActions);
+}
+
 void tea_timer_scene_preset_card_on_enter(void* context) {
     TeaTimerApp* app = context;
     Widget* widget = app->preset_card;
@@ -53,6 +68,12 @@ void tea_timer_scene_preset_card_on_enter(void* context) {
 
     widget_add_button_element(
         widget, GuiButtonTypeCenter, "Start", tea_timer_scene_preset_card_start_callback, app);
+
+    // Действия доступны только при загруженном пресете (C-UI-3).
+    if(app->session.has_preset) {
+        widget_add_button_element(
+            widget, GuiButtonTypeRight, ">", tea_timer_scene_preset_card_actions_callback, app);
+    }
 
     view_dispatcher_switch_to_view(app->view_dispatcher, TeaTimerViewPresetCard);
 }
