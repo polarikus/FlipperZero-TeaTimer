@@ -9,7 +9,7 @@ App(
     fap_category="Tools",
     fap_icon="images/10px.png",
     fap_icon_assets="images",
-    fap_description="Tea brewing timer with pour-over presets",
+    fap_description="Pour-over tea timer with presets: leaf dosage, pour times and water temperature range.",
     fap_author="igordanilov",
     cdefines=["TEA_TIMER_TESTS"],
     fap_private_libs=[
