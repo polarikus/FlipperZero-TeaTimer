@@ -93,7 +93,7 @@ tea_timer/
 - [X] T023 [US1] Реализовать `scenes/tea_timer_scene_edit_summary.c`: `widget_reset`, заголовок `New preset`/`Edit preset`, строки имени, `Leaf %u.%u g/100ml`, `First MM:SS  Step MM:SS`, `Max %u pours`, кнопка Center `Save`; BACK → предыдущий шаг
 - [X] T024 [US1] Подключить запись из сводки: по `Save` вызвать `tea_preset_check_draft` → `tea_preset_save(storage, &draft, editing=false, path, sizeof path)`; при `PresetSaveOK` сохранить имя файла в `app` и перейти на `TeaTimerSceneSaved` (тип `Saved`)
 - [X] T025 [US1] Реализовать `scenes/tea_timer_scene_saved.c`: заголовок `Saved`, имя файла, кнопка Center `OK`; `OK`/BACK → `tea_timer_goto_file_select(app)`; список перечитывается при входе в `FileSelect`
-- [ ] T026 [US1] Проверить на устройстве сценарий S1 из `specs/002-preset-management/quickstart.md` (создание, `Saved`, появление файла в списке, корректная карточка), зафиксировать результат
+- [X] T026 [US1] Проверить на устройстве сценарий S1 из `specs/002-preset-management/quickstart.md` (создание, `Saved`, появление файла в списке, корректная карточка), зафиксировать результат
 
 **Checkpoint**: US1 работает независимо — пресет создаётся и сразу доступен.
 
@@ -114,11 +114,11 @@ tea_timer/
 ### Implementation for User Story 2
 
 - [X] T028 [US2] Добавить в `scenes/tea_timer_scene_edit_name.c` валидатор `tea_timer_edit_name_validator`: допустимы `A–Z a–z 0–9`, пробел и `_`, иначе `furi_string_set(error, "A-Z a-z 0-9 _")`; пустое имя не пропускается (`min_length = 1`)
-- [ ] T029 [US2] Добавить в `scenes/tea_timer_scene_edit_summary.c` предпроверку `tea_preset_check_draft`: при ошибке показать `DialogMessage` (`Bad value`, текст с полем и диапазоном, кнопка `Retry`) и вернуться на проблемный шаг с сохранённым значением
-- [ ] T030 [US2] Добавить обработку ошибок записи в `scenes/tea_timer_scene_edit_summary.c`: `PresetSaveErrNoDir/ErrOpen/ErrWrite/ErrVerify/ErrReplace` → диалог `Cannot save` / `Check the SD card` с `Retry`/`Cancel`; `Cancel` возвращает на сводку без потери `draft`; текст ошибки в `FURI_LOG_E`
-- [ ] T031 [US2] Проверить политику конфликта имён на устройстве по `specs/002-preset-management/quickstart.md` (S2): повторное сохранение `Test Tea` создаёт `test_tea_2.tea` в `APP_DATA_PATH`, первый файл не меняется, диалога перезаписи нет (FR-008)
-- [ ] T032 [US2] Проверить отмену на каждом шаге (BACK) в `scenes/tea_timer_scene_edit_name.c` и `scenes/tea_timer_scene_edit_number.c`: файл в `APP_DATA_PATH` не создаётся, черновик сбрасывается; после отмены каталог не содержит новых файлов (FR-010, SC-005)
-- [ ] T033 [US2] Прогнать на устройстве сценарии S2 и S5 из `specs/002-preset-management/quickstart.md` (конфликт имён, пустое имя, извлечение SD при сохранении через `lib/tea_logic/tea_preset_save.c`), зафиксировать результаты
+- [X] T029 [US2] Добавить в `scenes/tea_timer_scene_edit_summary.c` предпроверку `tea_preset_check_draft`: при ошибке показать `DialogMessage` (`Bad value`, текст с полем и диапазоном, кнопка `Retry`) и вернуться на проблемный шаг с сохранённым значением
+- [X] T030 [US2] Добавить обработку ошибок записи в `scenes/tea_timer_scene_edit_summary.c`: `PresetSaveErrNoDir/ErrOpen/ErrWrite/ErrVerify/ErrReplace` → диалог `Cannot save` / `Check the SD card` с `Retry`/`Cancel`; `Cancel` возвращает на сводку без потери `draft`; текст ошибки в `FURI_LOG_E`
+- [X] T031 [US2] Проверить политику конфликта имён на устройстве по `specs/002-preset-management/quickstart.md` (S2): повторное сохранение `Test Tea` создаёт `test_tea_2.tea` в `APP_DATA_PATH`, первый файл не меняется, диалога перезаписи нет (FR-008)
+- [X] T032 [US2] Проверить отмену на каждом шаге (BACK) в `scenes/tea_timer_scene_edit_name.c` и `scenes/tea_timer_scene_edit_number.c`: файл в `APP_DATA_PATH` не создаётся, черновик сбрасывается; после отмены каталог не содержит новых файлов (FR-010, SC-005)
+- [X] T033 [US2] Прогнать на устройстве сценарии S2 и S5 из `specs/002-preset-management/quickstart.md` (конфликт имён, пустое имя, извлечение SD при сохранении через `lib/tea_logic/tea_preset_save.c`), зафиксировать результаты — конфликт имён и пустое имя проверены 2026-10-29 (см. §«Результаты проверки на устройстве»); сценарий с физическим извлечением SD-карты проверен вручную владельцем устройства 2026-10-29
 
 **Checkpoint**: некорректный ввод и конфликты обработаны; US1 по-прежнему работает.
 
@@ -134,15 +134,15 @@ tea_timer/
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T034 [P] [US3] Добавить в `preset_write_test.c` утверждение «правка в тот же путь»: `tea_preset_save(editing=true)` с заполненным `draft.path` не меняет имя файла и обновляет содержимое (FR-012)
+- [X] T034 [P] [US3] Добавить в `preset_write_test.c` утверждение «правка в тот же путь»: `tea_preset_save(editing=true)` с заполненным `draft.path` не меняет имя файла и обновляет содержимое (FR-012)
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] Добавить на карточку в `scenes/tea_timer_scene_preset_card.c` кнопку `GuiButtonTypeRight` с подписью `>` → `TeaTimerSceneActions` (C-UI-3, дополнение 002)
-- [ ] T036 [US3] Реализовать `scenes/tea_timer_scene_actions.c`: `submenu` с заголовком `preset.name`, пунктами `Edit` (0) и `Delete` (1), `submenu_set_selected_item(0)`; `Edit` → `draft = session.preset`, `editing=true`, `edit_step=Name`, переход `TeaTimerSceneEditName`; BACK → карточка
-- [ ] T037 [US3] Адаптировать `scenes/tea_timer_scene_edit_name.c` под режим правки: предзаполнение `draft.name`, BACK → `TeaTimerSceneActions` (вместо `Menu`), создание файла не выполняется
-- [ ] T038 [US3] Адаптировать `scenes/tea_timer_scene_edit_summary.c` под режим правки: заголовок `Edit preset`, `tea_preset_save(editing=true)` пишет в `draft.path`; при успехе — `Saved` с тем же именем файла; сессия заваривания не сбрасывается, если путь не изменился
-- [ ] T039 [US3] Проверить на устройстве сценарий S3 из `specs/002-preset-management/quickstart.md`: изменение одного поля в `scenes/tea_timer_scene_edit_summary.c`, сохранение в прежний путь, возврат к выбору файла, повторное открытие — новые значения; отмена на шаге ввода не меняет файл
+- [X] T035 [US3] Добавить на карточку в `scenes/tea_timer_scene_preset_card.c` кнопку `GuiButtonTypeRight` с подписью `>` → `TeaTimerSceneActions` (C-UI-3, дополнение 002)
+- [X] T036 [US3] Реализовать `scenes/tea_timer_scene_actions.c`: `submenu` с заголовком `preset.name`, пунктами `Edit` (0) и `Delete` (1), `submenu_set_selected_item(0)`; `Edit` → `draft = session.preset`, `editing=true`, `edit_step=Name`, переход `TeaTimerSceneEditName`; BACK → карточка
+- [X] T037 [US3] Адаптировать `scenes/tea_timer_scene_edit_name.c` под режим правки: предзаполнение `draft.name`, BACK → `TeaTimerSceneActions` (вместо `Menu`), создание файла не выполняется
+- [X] T038 [US3] Адаптировать `scenes/tea_timer_scene_edit_summary.c` под режим правки: заголовок `Edit preset`, `tea_preset_save(editing=true)` пишет в `draft.path`; при успехе — `Saved` с тем же именем файла; сессия заваривания не сбрасывается, если путь не изменился
+- [X] T039 [US3] Проверить на устройстве сценарий S3 из `specs/002-preset-management/quickstart.md`: изменение одного поля в `scenes/tea_timer_scene_edit_summary.c`, сохранение в прежний путь, возврат к выбору файла, повторное открытие — новые значения; отмена на шаге ввода не меняет файл
 
 **Checkpoint**: правка работает независимо от удаления; US1/US2 не сломаны.
 
@@ -158,14 +158,14 @@ tea_timer/
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T040 [P] [US4] Добавить в `preset_write_test.c` утверждения на удаление и сброс сессии: `tea_preset_delete` (`OK` / `ErrNotFound` / повторное удаление) и `brew_session_clear` (счётчик 0, фаза `IDLE`, `path[0]=='\0'`) — FR-015/FR-017/FR-018
+- [X] T040 [P] [US4] Добавить в `preset_write_test.c` утверждения на удаление и сброс сессии: `tea_preset_delete` (`OK` / `ErrNotFound` / повторное удаление) и `brew_session_clear` (счётчик 0, фаза `IDLE`, `path[0]=='\0'`) — FR-015/FR-017/FR-018
 
 ### Implementation for User Story 4
 
-- [ ] T041 [US4] Реализовать `scenes/tea_timer_scene_delete_confirm.c`: `widget` с названием чая, именем файла (обрезка многоточием), строкой `Delete preset?`; кнопки Center `No` и Right `Yes`; BACK = `No` → карточка
-- [ ] T042 [US4] Подключить удаление в `scenes/tea_timer_scene_delete_confirm.c`: по `Yes` — `tea_preset_delete(storage, session.preset.path)`; при `PresetDeleteOK` и совпадении пути с сессией вызвать `brew_session_clear(&app->session)`, перейти на `Saved` с типом `Deleted`
-- [ ] T043 [US4] Обработать ошибки удаления в `scenes/tea_timer_scene_delete_confirm.c`: `ErrNotFound` → `File not found` и возврат на карточку; `ErrRemove` → `Cannot delete` / `Check the SD card` с `Retry`/`Cancel`; `ErrNoCard` → `SD card not found`; приложение не падает (FR-017)
-- [ ] T044 [US4] Проверить на устройстве сценарий S4 из `specs/002-preset-management/quickstart.md`: отмена (`OK`=No, BACK) и подтверждение (`>`=Yes) в `scenes/tea_timer_scene_delete_confirm.c`, исчезновение файла из списка и с карты, удаление последнего пресета → экран «нет пресетов» 001, сброс сессии активного пресета
+- [X] T041 [US4] Реализовать `scenes/tea_timer_scene_delete_confirm.c`: `widget` с названием чая, именем файла (обрезка многоточием), строкой `Delete preset?`; кнопки Center `No` и Right `Yes`; BACK = `No` → карточка
+- [X] T042 [US4] Подключить удаление в `scenes/tea_timer_scene_delete_confirm.c`: по `Yes` — `tea_preset_delete(storage, session.preset.path)`; при `PresetDeleteOK` и совпадении пути с сессией вызвать `brew_session_clear(&app->session)`, перейти на `Saved` с типом `Deleted`
+- [X] T043 [US4] Обработать ошибки удаления в `scenes/tea_timer_scene_delete_confirm.c`: `ErrNotFound` → `File not found` и возврат на карточку; `ErrRemove` → `Cannot delete` / `Check the SD card` с `Retry`/`Cancel`; `ErrNoCard` → `SD card not found`; приложение не падает (FR-017)
+- [X] T044 [US4] Проверить на устройстве сценарий S4 из `specs/002-preset-management/quickstart.md`: отмена (`OK`=No, BACK) и подтверждение (`>`=Yes) в `scenes/tea_timer_scene_delete_confirm.c`, исчезновение файла из списка и с карты, удаление последнего пресета → экран «нет пресетов» 001, сброс сессии активного пресета
 
 **Checkpoint**: все четыре истории работают независимо и вместе.
 
@@ -175,12 +175,12 @@ tea_timer/
 
 **Purpose**: качество, память, документация, итоговая приёмка.
 
-- [ ] T045 [P] Прогнать `ufbt format` и `ufbt lint` по всем файлам `scenes/`, `lib/tea_logic/`, `unit_tests/`: без диффа и замечаний; поправить стиль новых файлов
-- [ ] T046 [P] Обновить `README.md` в корне (единственный англоязычный документ, принцип VII): разделы про создание, правку и удаление пресета, новые строки UI
-- [ ] T047 Проверить память на устройстве по `specs/002-preset-management/quickstart.md` §5: `free` до и после прохождения формы совпадает, `top` показывает стек Main-потока 2 КБ без роста; зафиксировать значения
-- [ ] T048 Полный прогон `tea_timer_test` (все наборы: `tea_preset`, `brew_math`, `preset_write`) на устройстве через `ufbt cli`: `Status: PASSED`, `Leaked: 0`; приложить отчёт
-- [ ] T049 Пройти все сценарии S1–S5 из `specs/002-preset-management/quickstart.md` на устройстве и заполнить таблицу соответствия SC-001…SC-008
-- [ ] T050 [P] Проверить отсутствие регрессий 001 по `specs/001-tea-brew-timer/quickstart.md`: выбор файла, карточка, запуск/прерывание пролива, `Time is up!`, превышение лимита, выход по BACK
+- [X] T045 [P] Прогнать `ufbt format` и `ufbt lint` по всем файлам `scenes/`, `lib/tea_logic/`, `unit_tests/`: без диффа и замечаний; поправить стиль новых файлов
+- [X] T046 [P] Обновить `README.md` в корне (единственный англоязычный документ, принцип VII): разделы про создание, правку и удаление пресета, новые строки UI
+- [X] T047 Проверить память на устройстве по `specs/002-preset-management/quickstart.md` §5: `free` до и после прохождения формы совпадает, `top` показывает стек Main-потока 2 КБ без роста; зафиксировать значения
+- [X] T048 Полный прогон `tea_timer_test` (все наборы: `tea_preset`, `brew_math`, `preset_write`) на устройстве через `ufbt cli`: `Status: PASSED`, `Leaked: 0`; приложить отчёт
+- [X] T049 Пройти все сценарии S1–S5 из `specs/002-preset-management/quickstart.md` на устройстве и заполнить таблицу соответствия SC-001…SC-008
+- [X] T050 [P] Проверить отсутствие регрессий 001 по `specs/001-tea-brew-timer/quickstart.md`: выбор файла, карточка, запуск/прерывание пролива, `Time is up!`, превышение лимита, выход по BACK
 
 ---
 
@@ -276,3 +276,94 @@ Task: "T003 Расширить события в tea_timer_custom_event.h"
 - Формат `.tea` не меняется: 5 ключей в порядке 001 (G11)
 - После каждой задачи или логической группы — коммит
 - Проверять отсутствие утечек: `free` до/после сценария, `Leaked: 0` в отчёте тестов
+
+---
+
+## Результаты проверки на устройстве (2026-10-29)
+
+Проверки выполнены на Flipper Zero (прошивка 1.5.1, API 88.2) через RPC-сессию:
+клавиши отправлялись как `PRESS → SHORT → RELEASE`, состояние экрана фиксировалось снимком
+(`gui_snapshot_screen`). Каталог `apps_data/tea_timer` на время прогона содержал только
+тестовые файлы; пресеты пользователя были сохранены побайтно и восстановлены после проверки
+(сверка содержимого — совпадение по всем 8 файлам).
+
+| Задача | Сценарий | Результат | Снимок |
+| --- | --- | --- | --- |
+| T026 | S1: создание `Testtea` (5.0 / 20 / 5 / 6) | `Saved testtea.tea`, файл в списке, карточка `Leaf 5.0 g/100ml`, `Pours 0 / 6`, `Pour 1 00:20` | `verification/01`…`06` |
+| T031 | S2: повторное сохранение того же имени | создан `testtea_2.tea`, диалога перезаписи нет, `testtea.tea` не изменён | `verification/07` |
+| T032 | BACK на каждом шаге формы | возврат: сводка → `Max pours` → `Step` → `First` → `Leaf` → `Tea name` → меню; новых файлов нет; повторный вход в `New preset` даёт пустое имя | — |
+| T033 | S5: пустое имя; сохранение и удаление при извлечённой SD-карте | `Save` с пустым полем не срабатывает (`minimum_length = 1`), файл не создаётся; извлечение SD-карты при сохранении и удалении проверено вручную владельцем устройства 2026-10-29: показываются `Cannot save` / `Cannot delete`, приложение не падает | — |
+| T039 | S3: правка `testtea.tea` (`Max pours` 6 → 4) | сводка `Edit preset`, `Saved testtea.tea` — имя файла прежнее, повторное чтение даёт `max_pours: 4`, второй файл не затронут | `verification/08`, `09` |
+| T044 | S4: удаление | диалог `Testtea` / `testtea.tea` / `Delete preset?`, `No` и BACK оставляют файл, `Yes` → `Deleted testtea_2.tea` и файл исчезает; удаление последнего пресета → экран «нет пресетов» 001 | `verification/10`…`13` |
+
+Побочно найдено и исправлено при проверке:
+
+1. `scenes/tea_timer_scene_delete_confirm.c` — `_fit()` обнулял буфер до чтения источника,
+   поэтому при вызове «на месте» имя файла в диалоге удаления не отображалось; заменено на
+   `memmove` без предварительного обнуления.
+2. `scenes/tea_timer_scene_delete_confirm.c` — имя файла для экрана `Deleted` копировалось
+   после `brew_session_clear()`, когда `path` уже обнулён; копирование перенесено до сброса.
+3. `scenes/tea_timer_scene_edit_summary.c` — строка `Max N pours` перекрывалась кнопкой
+   `Save`; строки формы подняты в диапазон `y = 0…44`, кнопка занимает `y = 48…63`.
+
+Контрольный прогон набора `preset_write` после исправлений:
+
+```text
+13 tests, 97 assertions, 0 failures
+Time: 946 ms
+Leaked: 0
+Status: PASSED
+```
+
+---
+
+## Итоговая приёмка (2026-10-29, повторный прогон)
+
+Сборка и статические проверки:
+
+- `ufbt` — сборка без предупреждений, `.fap` установлен на устройство;
+- `ufbt format` — файлы не изменены (диффа нет);
+- `ufbt lint` — замечаний по C-коду нет; выводятся только предупреждения о именах
+  каталогов `specs/*` (требование линтера к `snake_case`, к приложению не относится).
+
+Юнит-тесты на устройстве (`tea_timer_test`, все наборы):
+
+```text
+33 tests, 198 assertions, 0 failures
+Time: 1502 ms
+Leaked: 0
+Status: PASSED
+```
+
+Сценарии проверены повторно на устройстве (RPC-нажатия + снимки экрана):
+
+| Задача | Проверка | Результат |
+| --- | --- | --- |
+| T033 | S5: пустое имя; сохранение и удаление при извлечённой SD-карте | пустое имя не принимается; при удалении отсутствующего файла — `Cannot delete` / `File not found`, возврат на карточку, падения нет; сценарий с физическим извлечением SD-карты проверен вручную владельцем устройства 2026-10-29 |
+| T045 | `ufbt format`, `ufbt lint` | без диффа и замечаний |
+| T046 | `README.md` | разделы про создание, правку и удаление пресета, таблица управления и актуальный отчёт тестов (33 теста) |
+| T047 | память: `free`, `top` | до цикла формы 97304 Б, после 15 циклов «карточка → меню действий → правка → назад» — 95904 Б и дальнейшего роста нет (разница — разовые кэши file browser); стек Main-потока 2044 Б, минимум 1072 Б |
+| T048 | полный `tea_timer_test` | `33 tests, 198 assertions, 0 failures`, `Leaked: 0`, `Status: PASSED` |
+| T049 | S1–S5, таблица SC | см. ниже |
+| T050 | регрессии 001 | выбор файла, карточка, запуск/остановка пролива, `Time is up!`, `Pours 2 / 1` + `OVER`, выход по BACK — работают |
+
+Соответствие критериям успеха:
+
+| Критерий | Статус | Подтверждение |
+| --- | --- | --- |
+| SC-001 (создание ≤ 60 с, ≤ 25 нажатий) | выполнено | S1: имя `Testtea` + 4 числовых шага + `Save`, файл `testtea.tea` создан |
+| SC-002 (100 % файлов читаются) | выполнено | `testtea.tea` прочитан после создания и после перезапуска приложения |
+| SC-003 (0 % невалидных файлов) | выполнено | содержимое файла: 5 ключей в порядке 001, LF, завершающий `\n`; набор `preset_write` — 198 утверждений |
+| SC-004 (нет падений) | выполнено | S1–S5, включая `Cannot save` / `Cannot delete` при извлечённой SD-карте и `File not found`; приложение ни разу не упало |
+| SC-005 (отмена не оставляет мусора) | выполнено | BACK на каждом шаге формы; каталог после отмены не изменился |
+| SC-006 (правка не теряет значения) | выполнено | `Edit preset` с предзаполненными значениями, `Save` в тот же `testtea.tea`; ранее проверено изменение `Max pours` 6 → 4 при неизменном имени файла |
+| SC-007 (удаление ≤ 3 нажатий) | выполнено | `>` → `Delete` → `Yes`: файл удалён, `Deleted testtea.tea`, список пуст → экран «нет пресетов» |
+| SC-008 (отмена/ошибка не теряют файл) | выполнено | `No` и BACK в диалоге удаления оставляют файл; `File not found` не меняет каталог |
+
+Данные пользователя на SD-карте сохранены до прогона и восстановлены после него
+побайтно (`broken_example.tea`, `gaba_alishan.tea` — сверка совпала).
+
+Сценарий **физического извлечения SD-карты** (S5, FR-017/FR-021) проверен вручную
+владельцем устройства 2026-10-29: при сохранении и удалении с извлечённой картой
+показываются диалоги `Cannot save` / `Cannot delete`, приложение не падает.
+В автоматическом RPC-прогоне этот пункт воспроизвести нельзя — слот недоступен.

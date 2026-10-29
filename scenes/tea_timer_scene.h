@@ -44,6 +44,9 @@ void tea_timer_scene_file_select_file_callback(void* context);
 /** Вернуться к выбору файла без промежуточных сцен; при пустом каталоге — маршрутизация. */
 void tea_timer_goto_file_select(TeaTimerApp* app);
 
+/** Имя файла (basename) из полного пути; строка всегда завершается нулём. */
+void tea_timer_basename(const char* path, char* out, size_t size);
+
 /** Маршрутизация «Presets»: Error / NoPresets / FileSelect по состоянию носителя. */
 void tea_timer_show_presets(TeaTimerApp* app);
 

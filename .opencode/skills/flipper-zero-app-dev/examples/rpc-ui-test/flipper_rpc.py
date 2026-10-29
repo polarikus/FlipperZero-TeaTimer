@@ -9,7 +9,12 @@
     fp = connect("/dev/cu.usbmodemflip_XXXX")
     press(fp, "OK")
     save_snapshot(fp, "menu.png")
+    print(ascii_dump(fp.rpc_gui_snapshot_screen()))        # проверить, что разбор верный
     wait_for_frac(fp, (40, 92, 17, 28), 0.6, timeout=70)   # дождаться DONE
+
+Перезапуск и сохранность данных — только через обычный pyserial, до RPC-сессии:
+    restart_app("/dev/cu.usbmodemflip_XXXX", "/ext/apps/Tools/my_app.fap")
+    fp = connect("/dev/cu.usbmodemflip_XXXX")
 """
 
 from __future__ import annotations
@@ -26,6 +31,40 @@ def connect(port: str, settle: float = 0.5) -> FlipperProto:
     fp = FlipperProto(port)
     time.sleep(settle)
     return fp
+
+
+def restart_app(port: str, fap: str = "/ext/apps/Tools/my_app.fap", settle: float = 2.5) -> None:
+    """Перезапустить FAP через CLI `loader close` + `loader open`.
+
+    RPC-методы для этого не годятся: `rpc_app_exit()` для приложения, запущенного
+    через `ufbt launch`/`loader open`, отвечает `ERROR_APP_NOT_RUNNING`, а
+    `rpc_app_start()` на уже работающем — `ERROR_APP_SYSTEM_LOCKED`.
+    Порт должен быть свободен от RPC-сессии.
+    """
+    import serial
+
+    ser = serial.Serial(port, 115200, timeout=0.3)
+    try:
+        time.sleep(0.8)
+        ser.write(b"\x03")  # Ctrl+C: выйти из возможного хвоста вывода
+        time.sleep(1.0)
+        ser.reset_input_buffer()
+        for command in ("loader close", "loader open %s" % fap):
+            ser.write(command.encode() + b"\r\n")
+            time.sleep(2.0)
+            ser.reset_input_buffer()
+    finally:
+        ser.close()
+    time.sleep(settle)
+
+
+def ascii_dump(data: bytes, y0: int = 0, y1: int = 63) -> str:
+    """Распечатать кадр текстом. Мелкий шрифт должен читаться — иначе раскладка неверная."""
+    lines = []
+    for y in range(y0, y1 + 1):
+        page, bit = (y // 8) * 128, 1 << (y % 8)
+        lines.append("".join("#" if data[page + x] & bit else "." for x in range(128)))
+    return "\n".join(lines)
 
 
 def framebuffer_to_image(data: bytes) -> Image.Image:
@@ -107,12 +146,44 @@ def read_text(fp: FlipperProto, path: str) -> str:
     return fp.rpc_read(path).decode("utf-8", "replace")
 
 
+def backup_dir(fp: FlipperProto, remote_dir: str, local_dir: str) -> dict[str, bytes]:
+    """Скопировать все файлы каталога на диск. Возвращает снимок содержимого."""
+    os.makedirs(local_dir, exist_ok=True)
+    snapshot: dict[str, bytes] = {}
+    for name in list_dir(fp, remote_dir):
+        data = fp.rpc_read("%s/%s" % (remote_dir, name))
+        snapshot[name] = data
+        with open(os.path.join(local_dir, name), "wb") as handle:
+            handle.write(data)
+    return snapshot
+
+
+def restore_dir(
+    fp: FlipperProto, remote_dir: str, local_dir: str, clear: bool = True
+) -> list[str]:
+    """Вернуть файлы из локальной копии и сверить побайтно. Возвращает список расхождений."""
+    if clear:
+        for name in list_dir(fp, remote_dir):
+            fp.rpc_delete("%s/%s" % (remote_dir, name))
+    mismatched = []
+    for name in sorted(os.listdir(local_dir)):
+        with open(os.path.join(local_dir, name), "rb") as handle:
+            expected = handle.read()
+        fp.rpc_write("%s/%s" % (remote_dir, name), expected)
+        if fp.rpc_read("%s/%s" % (remote_dir, name)) != expected:
+            mismatched.append(name)
+    return mismatched
+
+
 if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("usage: flipper_rpc.py <port> [snapshot.png]")
+        print("usage: flipper_rpc.py <port> [snapshot.png | --ascii]")
         raise SystemExit(2)
     device = connect(sys.argv[1])
-    out = sys.argv[2] if len(sys.argv) > 2 else "snapshot.png"
-    print(save_snapshot(device, out))
+    if len(sys.argv) > 2 and sys.argv[2] == "--ascii":
+        print(ascii_dump(device.rpc_gui_snapshot_screen()))
+    else:
+        out = sys.argv[2] if len(sys.argv) > 2 else "snapshot.png"
+        print(save_snapshot(device, out))

@@ -10,9 +10,12 @@
 #include "../../../lib/tea_logic/tea_preset_save.h"
 
 /** Каталог временных файлов набора (создаётся и удаляется самим набором). */
-#define TEST_DIR         APP_DATA_PATH("test")
-#define TEST_FILE        APP_DATA_PATH("test/test_tea.tea")
-#define TEST_FILE_SUFFIX APP_DATA_PATH("test/test_tea_2.tea")
+#define TEST_DIR              APP_DATA_PATH("test")
+#define TEST_FILE             APP_DATA_PATH("test/test_tea.tea")
+#define TEST_FILE_SUFFIX      APP_DATA_PATH("test/test_tea_2.tea")
+/** Файлы правки: имя строится из названия `Edit Me` (FR-012). */
+#define TEST_FILE_EDIT        APP_DATA_PATH("test/edit_me.tea")
+#define TEST_FILE_EDIT_SUFFIX APP_DATA_PATH("test/edit_me_2.tea")
 
 /** Буферы статические: стек CLI-потока теста ограничен (2048 байт). */
 static char test_write_buffer[TEA_FILE_MAX_SIZE + 1];
@@ -252,6 +255,87 @@ MU_TEST(test_save_create_and_suffix) {
     mu_assert("first file must stay", first_untouched);
 }
 
+MU_TEST(test_save_edit_same_path) {
+    // FR-012: правка пишет в тот же путь, имя файла не меняется.
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+
+    // Имя файла при создании строится из названия: `Edit Me` -> `edit_me.tea`.
+    storage_common_remove(storage, TEST_FILE_EDIT);
+    storage_common_remove(storage, TEST_FILE_EDIT_SUFFIX);
+
+    // Каталог берётся из пути черновика, имя файла — из названия (US1→US3).
+    static TeaPreset original;
+    test_make_default_draft(&original, "Edit Me", TEST_FILE);
+    PresetSaveResult created =
+        tea_preset_save(storage, &original, false, test_path_buffer, sizeof(test_path_buffer));
+    bool path_is_first = strcmp(original.path, TEST_FILE_EDIT) == 0 &&
+                         strcmp(test_path_buffer, TEST_FILE_EDIT) == 0;
+
+    // Правка: меняем одно значение, остальные остаются прежними.
+    static TeaPreset edited;
+    edited = original;
+    edited.leaf_tenths_g = 61;
+    PresetSaveResult save_edit =
+        tea_preset_save(storage, &edited, true, test_path_buffer, sizeof(test_path_buffer));
+    bool path_kept = strcmp(edited.path, TEST_FILE_EDIT) == 0 &&
+                     strcmp(test_path_buffer, TEST_FILE_EDIT) == 0;
+
+    static TeaPreset loaded;
+    memset(&loaded, 0, sizeof(loaded));
+    TeaPresetResult load = tea_preset_load(
+        storage, TEST_FILE_EDIT, test_write_buffer, TEA_PARSE_BUF_SIZE, &loaded, NULL);
+    bool suffix_absent = !storage_file_exists(storage, TEST_FILE_EDIT_SUFFIX);
+
+    storage_common_remove(storage, TEST_FILE_EDIT);
+    storage_common_remove(storage, TEST_FILE_EDIT_SUFFIX);
+    furi_record_close(RECORD_STORAGE);
+
+    mu_assert_int_eq(PresetSaveOK, created);
+    mu_assert("created file must use the first name", path_is_first);
+    mu_assert_int_eq(PresetSaveOK, save_edit);
+    mu_assert("edit must keep the file name", path_kept);
+    mu_assert("edit must not create a copy", suffix_absent);
+    mu_assert_int_eq(TeaPresetResultOK, load);
+    mu_assert_int_eq(61, loaded.leaf_tenths_g);
+    mu_assert_int_eq(TEA_DEFAULT_FIRST_POUR_SEC, loaded.first_pour_sec);
+    mu_assert_int_eq(TEA_DEFAULT_INCREMENT_SEC, loaded.increment_sec);
+    mu_assert_int_eq(TEA_DEFAULT_MAX_POURS, loaded.max_pours);
+    mu_assert_string_eq("Edit Me", loaded.name);
+}
+
+MU_TEST(test_delete_active_preset_clears_session) {
+    // FR-015/FR-017/FR-018: удаление активного пресета сбрасывает сессию.
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+
+    static TeaPreset preset;
+    test_make_default_draft(&preset, "Active Tea", TEST_FILE);
+    PresetSaveResult saved =
+        tea_preset_save(storage, &preset, false, test_path_buffer, sizeof(test_path_buffer));
+
+    static BrewSession session;
+    brew_session_reset_from_preset(&preset, &session);
+    session.completed_pours = 2;
+    session.next_pour_sec = 25;
+    session.phase = BrewPhaseDONE;
+
+    PresetDeleteResult deleted = tea_preset_delete(storage, session.preset.path);
+    bool removed = !storage_file_exists(storage, preset.path);
+    if(deleted == PresetDeleteOK && session.has_preset &&
+       strcmp(session.preset.path, preset.path) == 0) {
+        brew_session_clear(&session);
+    }
+
+    furi_record_close(RECORD_STORAGE);
+
+    mu_assert_int_eq(PresetSaveOK, saved);
+    mu_assert_int_eq(PresetDeleteOK, deleted);
+    mu_assert("file must be removed", removed);
+    mu_assert("session must be cleared", !session.has_preset);
+    mu_assert_int_eq(0, session.completed_pours);
+    mu_assert_int_eq(BrewPhaseIDLE, session.phase);
+    mu_assert_int_eq(0, strlen(session.preset.path));
+}
+
 MU_TEST(test_save_rejects_bad_draft) {
     Storage* storage = furi_record_open(RECORD_STORAGE);
 
@@ -309,6 +393,8 @@ static void run_minunit_test_preset_write_suite(void) {
     MU_RUN_TEST(test_check_draft_ranges);
     MU_RUN_TEST(test_defaults_round_trip);
     MU_RUN_TEST(test_save_create_and_suffix);
+    MU_RUN_TEST(test_save_edit_same_path);
+    MU_RUN_TEST(test_delete_active_preset_clears_session);
     MU_RUN_TEST(test_save_rejects_bad_draft);
     MU_RUN_TEST(test_delete);
     MU_RUN_TEST(test_session_clear);

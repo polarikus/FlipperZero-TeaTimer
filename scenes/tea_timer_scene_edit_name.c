@@ -41,6 +41,8 @@ void tea_timer_scene_edit_name_on_enter(void* context) {
 
     text_input_reset(text_input);
     text_input_set_header_text(text_input, "Tea name");
+    // clear_default_text=false: правка открывается с текущим именем, создание — с пустым
+    // (меню сбрасывает `draft` в умолчания перед входом).
     text_input_set_result_callback(
         text_input,
         tea_timer_scene_edit_name_callback,
@@ -60,7 +62,14 @@ bool tea_timer_scene_edit_name_on_event(void* context, SceneManagerEvent event) 
 
     if(event.type == SceneManagerEventTypeBack) {
         // Создание: назад в меню; правка: назад в меню действий. Файл не меняется.
-        scene_manager_previous_scene(app->scene_manager);
+        if(app->editing) {
+            if(!scene_manager_search_and_switch_to_previous_scene(
+                   app->scene_manager, TeaTimerSceneActions)) {
+                scene_manager_previous_scene(app->scene_manager);
+            }
+        } else {
+            scene_manager_previous_scene(app->scene_manager);
+        }
         consumed = true;
     }
 

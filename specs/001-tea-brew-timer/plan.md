@@ -124,19 +124,19 @@
 | # | Экран | Готовый компонент | Ключевые вызовы | Своего кода |
 |---|---|---|---|---|
 | 01 | Главное меню `Presets` / `New preset` (002 FR-001) | **`submenu`** | `submenu_alloc`, `submenu_set_header("Tea Timer")`, `submenu_add_item` | нет |
-| 02 | Выбор пресета — системный выбор файла (002 FR-002, замена FR-006) | **`file_browser`** | `file_browser_alloc(result_path)`, `file_browser_configure(b, ".tea", APP_DATA_PATH(""), false, true, &I_tea_file, true)` (`tea_timer_icons.h`), `file_browser_start`, `file_browser_set_callback` | нет |
-| 03 | Карточка пресета = экран заваривания в ожидании `IDLE` (002 FR-005, FR-009/010) | **`widget`** | `widget_add_string_element`, `widget_add_button_element(Center, "Start", …)` — `Start` сразу запускает отсчёт | нет |
+| 02 | Выбор пресета — системный выбор файла (001 FR-006 заменён) | **`file_browser`** | `file_browser_alloc(result_path)`, `file_browser_configure(b, ".tea", APP_DATA_PATH(""), false, true, &I_tea_file, true)` (`tea_timer_icons.h`), `file_browser_start`, `file_browser_set_callback` | нет |
+| 03 | Карточка пресета = экран заваривания в ожидании `IDLE` (001 FR-009/010) | **`widget`** | `widget_add_string_element`, `widget_add_button_element(Center, "Start", …)` — `Start` сразу запускает отсчёт | нет |
 | 04 | Отсчёт (FR-018) | **`brew_view`** (единственный свой) | `canvas_set_font(FontBigNumbers)`, `canvas_draw_str_aligned` | 1 View |
 | 05 | `Time is up!` (FR-013/019) | состояние `DONE` в `brew_view` (альтернатива `popup` отклонена: нужен крупный отсчёт и плашка) | `canvas_draw_str_aligned` | часть draw |
 | 06 | Превышение `9 / 8 OVER` (FR-014) | флаг `over_limit` в `brew_view` (`canvas_draw_rbox`), не отдельная фаза | — | часть draw |
 | 07 | ~~Файл пропущен~~ (FR-007 в 001 не требует счётчика) | не реализуется в 001: причина показывается диалогом C-UI-10 | — | — |
 | 08 | Пресетов нет (FR-008) | **`widget`** + кнопка `Reload` | `widget_add_string_element`, `widget_add_button_element` | нет |
 | 09 | SD-карта недоступна | **`dialogs`** | `dialog_message_show_storage_error()` | нет |
-| 10 | Ошибка проверки файла (002 FR-006) | **`dialogs`** `DialogMessage` | `dialog_message_set_header/text/buttons`, `dialog_message_show` | нет |
-| 11 | Ввод названия (002 FR-009) | **`text_input`** | `text_input_set_header_text`, `text_input_set_result_callback` | нет |
-| 12 | Ввод чисел (002 FR-010/012) | **`number_input`** | `number_input_set_result_callback(input, cb, ctx, &value, min, max)` | нет |
-| 13 | Сводка/подтверждение (002 FR-013) | **`widget`** + `DialogMessage` `Yes/No` | — | нет |
-| 14 | «Сохранено: file.tea» (002 FR-015) | **`popup`** | — | нет |
+| 10 | Ошибка проверки файла (001 FR-007) | **`dialogs`** `DialogMessage` | `dialog_message_set_header/text/buttons`, `dialog_message_show` | нет |
+| 11 | Ввод названия (002 FR-003) | **`text_input`** | `text_input_set_header_text`, `text_input_set_result_callback` | нет |
+| 12 | Ввод чисел (002 FR-004/FR-006) | **`number_input`** | `number_input_set_result_callback(input, cb, ctx, &value, min, max)` | нет |
+| 13 | Сводка/подтверждение (002 FR-007) | **`widget`** + `DialogMessage` `Yes/No` | — | нет |
+| 14 | «Сохранено: file.tea» (002 FR-009) | **`popup`** | — | нет |
 | 15 | Долгое чтение/старт | **`loading`** | `loading_alloc`, `loading_get_view` | нет |
 
 Не берём: `menu` (нужны иконки-ассеты), `variable_item_list` (редактор значений в
