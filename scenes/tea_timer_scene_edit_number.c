@@ -21,6 +21,19 @@ static void tea_timer_scene_edit_number_configure(TeaTimerApp* app) {
         min_value = 1;
         max_value = 500;
         break;
+    case TeaEditStepWaterMin:
+        header = "Water min, C";
+        value = app->draft.water_temp_min_c;
+        min_value = TEA_WATER_TEMP_MIN;
+        max_value = TEA_WATER_TEMP_MAX;
+        break;
+    case TeaEditStepWaterMax:
+        // Нижняя граница = введённый минимум: инверсия диапазона невозможна (FR-017).
+        header = "Water max, C";
+        value = app->draft.water_temp_max_c;
+        min_value = app->draft.water_temp_min_c;
+        max_value = TEA_WATER_TEMP_MAX;
+        break;
     case TeaEditStepFirst:
         header = "First pour, sec";
         value = app->draft.first_pour_sec;
@@ -54,6 +67,14 @@ static void tea_timer_scene_edit_number_callback(void* context, int32_t number) 
     switch(app->edit_step) {
     case TeaEditStepLeaf:
         app->draft.leaf_tenths_g = (uint16_t)number;
+        app->edit_step = TeaEditStepWaterMin;
+        break;
+    case TeaEditStepWaterMin:
+        app->draft.water_temp_min_c = (uint8_t)number;
+        app->edit_step = TeaEditStepWaterMax;
+        break;
+    case TeaEditStepWaterMax:
+        app->draft.water_temp_max_c = (uint8_t)number;
         app->edit_step = TeaEditStepFirst;
         break;
     case TeaEditStepFirst:

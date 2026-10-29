@@ -49,6 +49,8 @@ typedef enum {
 typedef enum {
     TeaEditStepName, /**< Название */
     TeaEditStepLeaf, /**< Граммовка в десятых долях */
+    TeaEditStepWaterMin, /**< Температура воды, минимум */
+    TeaEditStepWaterMax, /**< Температура воды, максимум */
     TeaEditStepFirst, /**< Первый пролив, с */
     TeaEditStepIncrement, /**< Приращение, с */
     TeaEditStepMaxPours, /**< Число проливов */

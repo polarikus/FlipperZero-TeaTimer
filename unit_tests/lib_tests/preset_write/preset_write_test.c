@@ -17,23 +17,61 @@
 #define TEST_FILE_EDIT        APP_DATA_PATH("test/edit_me.tea")
 #define TEST_FILE_EDIT_SUFFIX APP_DATA_PATH("test/edit_me_2.tea")
 
+/** Файл старого формата 001/002 без ключей температуры (US3). */
+#define TEST_FILE_LEGACY APP_DATA_PATH("test/legacy_tea.tea")
+
+/** Файл старого формата: пары температуры нет, остальное — эталон. */
+static const char* const test_legacy_text = "name: Legacy Tea\n"
+                                            "leaf_g_per_100ml: 5.0\n"
+                                            "first_pour_sec: 20\n"
+                                            "increment_sec: 5\n"
+                                            "max_pours: 6\n";
+
 /** Буферы статические: стек CLI-потока теста ограничен (2048 байт). */
 static char test_write_buffer[TEA_FILE_MAX_SIZE + 1];
+static char test_read_buffer[TEA_FILE_MAX_SIZE + 1];
 static char test_slug_buffer[TEA_SLUG_MAX + 1];
 static char test_path_buffer[TEA_PATH_MAX];
 static TeaPreset test_draft;
 
-/** Эталон: 5.0 / 20 / 5 / 6 — умолчания формы создания (FR-005). */
+/** Эталон: 5.0 / 85 / 90 / 20 / 5 / 6 — умолчания формы создания (FR-005, FR-015). */
 static void test_make_default_draft(TeaPreset* draft, const char* name, const char* path) {
     memset(draft, 0, sizeof(TeaPreset));
     snprintf(draft->name, sizeof(draft->name), "%s", name);
     draft->leaf_tenths_g = TEA_DEFAULT_LEAF_TENTHS;
+    draft->water_temp_min_c = TEA_DEFAULT_WATER_TEMP_MIN;
+    draft->water_temp_max_c = TEA_DEFAULT_WATER_TEMP_MAX;
     draft->first_pour_sec = TEA_DEFAULT_FIRST_POUR_SEC;
     draft->increment_sec = TEA_DEFAULT_INCREMENT_SEC;
     draft->max_pours = TEA_DEFAULT_MAX_POURS;
     if(path != NULL) {
         snprintf(draft->path, sizeof(draft->path), "%s", path);
     }
+}
+
+/** Записать файл целиком через Storage. */
+static bool test_write_file(Storage* storage, const char* path, const char* data, size_t size) {
+    File* file = storage_file_alloc(storage);
+    bool written = storage_file_open(file, path, FSAM_WRITE, FSOM_CREATE_ALWAYS);
+    if(written) {
+        written = storage_file_write(file, data, size) == size;
+    }
+    storage_file_close(file);
+    storage_file_free(file);
+    return written;
+}
+
+/** Прочитать файл целиком через Storage; 0 — файл не прочитан. */
+static size_t test_read_file(Storage* storage, const char* path, char* buf, size_t size) {
+    File* file = storage_file_alloc(storage);
+    size_t total = 0;
+    if(storage_file_open(file, path, FSAM_READ, FSOM_OPEN_EXISTING)) {
+        total = storage_file_read(file, buf, size - 1);
+    }
+    storage_file_close(file);
+    storage_file_free(file);
+    buf[total] = '\0';
+    return total;
 }
 
 MU_TEST(test_build_slug) {
@@ -78,6 +116,8 @@ MU_TEST(test_serialize_reference) {
     mu_assert_int_eq(TeaPresetResultOK, result);
     static const char* const expected = "name: Test Tea\n"
                                         "leaf_g_per_100ml: 5.0\n"
+                                        "water_temp_min_c: 85\n"
+                                        "water_temp_max_c: 90\n"
                                         "first_pour_sec: 20\n"
                                         "increment_sec: 5\n"
                                         "max_pours: 6\n";
@@ -108,6 +148,82 @@ MU_TEST(test_serialize_round_trip) {
     mu_assert_int_eq(3600, parsed.first_pour_sec);
     mu_assert_int_eq(600, parsed.increment_sec);
     mu_assert_int_eq(99, parsed.max_pours);
+}
+
+MU_TEST(test_serialize_water_keys) {
+    // FR-004, FR-008, SC-007: семь ключей в порядке контракта и обратное чтение.
+    test_make_default_draft(&test_draft, "Green Tea", NULL);
+    test_draft.water_temp_min_c = 85;
+    test_draft.water_temp_max_c = 87;
+
+    size_t len = 0;
+    mu_assert_int_eq(
+        TeaPresetResultOK,
+        tea_preset_serialize(&test_draft, test_write_buffer, sizeof(test_write_buffer), &len));
+
+    static const char* const expected = "name: Green Tea\n"
+                                        "leaf_g_per_100ml: 5.0\n"
+                                        "water_temp_min_c: 85\n"
+                                        "water_temp_max_c: 87\n"
+                                        "first_pour_sec: 20\n"
+                                        "increment_sec: 5\n"
+                                        "max_pours: 6\n";
+    mu_assert("serialized text mismatch", strcmp(expected, test_write_buffer) == 0);
+    mu_assert_int_eq(strlen(test_write_buffer), len);
+    mu_assert("last byte must be LF", test_write_buffer[len - 1] == '\n');
+
+    unsigned lines = 0;
+    for(size_t i = 0; i < len; i++) {
+        if(test_write_buffer[i] == '\n') {
+            lines++;
+        }
+    }
+    mu_assert_int_eq(7, lines);
+
+    TeaPreset parsed;
+    memset(&parsed, 0, sizeof(parsed));
+    mu_assert_int_eq(
+        TeaPresetResultOK, tea_preset_parse_buf(test_write_buffer, len, &parsed, NULL, 0));
+    mu_assert_string_eq("Green Tea", parsed.name);
+    mu_assert_int_eq(50, parsed.leaf_tenths_g);
+    mu_assert_int_eq(85, parsed.water_temp_min_c);
+    mu_assert_int_eq(87, parsed.water_temp_max_c);
+    mu_assert_int_eq(20, parsed.first_pour_sec);
+    mu_assert_int_eq(5, parsed.increment_sec);
+    mu_assert_int_eq(6, parsed.max_pours);
+}
+
+MU_TEST(test_check_draft_water_temp) {
+    // FR-002, FR-003, FR-017: диапазон 85–90 и порядок «минимум ≤ максимум».
+    char field[24];
+
+    test_make_default_draft(&test_draft, "Test Tea", NULL);
+    mu_assert_int_eq(TeaPresetResultOK, tea_preset_check_draft(&test_draft));
+
+    test_draft.water_temp_min_c = 87;
+    test_draft.water_temp_max_c = 87;
+    mu_assert_int_eq(TeaPresetResultOK, tea_preset_check_draft(&test_draft));
+
+    test_draft.water_temp_min_c = 84;
+    test_draft.water_temp_max_c = 90;
+    mu_assert_int_eq(
+        TeaPresetResultErrOutOfRange,
+        tea_preset_check_draft_ex(&test_draft, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_min_c", field);
+
+    test_draft.water_temp_min_c = 85;
+    test_draft.water_temp_max_c = 91;
+    mu_assert_int_eq(
+        TeaPresetResultErrOutOfRange,
+        tea_preset_check_draft_ex(&test_draft, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_max_c", field);
+
+    test_draft.water_temp_min_c = 88;
+    test_draft.water_temp_max_c = 86;
+    mu_assert_int_eq(
+        TeaPresetResultErrOutOfRange,
+        tea_preset_check_draft_ex(&test_draft, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_max_c", field);
 }
 
 MU_TEST(test_check_draft_names) {
@@ -303,6 +419,59 @@ MU_TEST(test_save_edit_same_path) {
     mu_assert_string_eq("Edit Me", loaded.name);
 }
 
+MU_TEST(test_save_edit_legacy_adds_water_keys) {
+    // FR-019…FR-022: правка файла старого формата дописывает оба ключа,
+    // сохраняя имя файла и остальные значения; обратное чтение совпадает.
+    Storage* storage = furi_record_open(RECORD_STORAGE);
+
+    storage_common_remove(storage, TEST_FILE_LEGACY);
+    bool written =
+        test_write_file(storage, TEST_FILE_LEGACY, test_legacy_text, strlen(test_legacy_text));
+
+    static TeaPreset draft;
+    memset(&draft, 0, sizeof(draft));
+    TeaPresetResult loaded = tea_preset_load(
+        storage, TEST_FILE_LEGACY, test_read_buffer, sizeof(test_read_buffer), &draft, NULL);
+    bool legacy_defaults = draft.water_temp_min_c == TEA_WATER_TEMP_DEFAULT_MIN &&
+                           draft.water_temp_max_c == TEA_WATER_TEMP_DEFAULT_MAX;
+
+    // Правим только максимум: минимум остаётся умолчанием 85.
+    draft.water_temp_max_c = 88;
+    PresetSaveResult save_edit =
+        tea_preset_save(storage, &draft, true, test_path_buffer, sizeof(test_path_buffer));
+    bool path_kept = strcmp(draft.path, TEST_FILE_LEGACY) == 0 &&
+                     strcmp(test_path_buffer, TEST_FILE_LEGACY) == 0;
+
+    size_t text_len =
+        test_read_file(storage, TEST_FILE_LEGACY, test_read_buffer, sizeof(test_read_buffer));
+    bool has_min = strstr(test_read_buffer, "water_temp_min_c: 85\n") != NULL;
+    bool has_max = strstr(test_read_buffer, "water_temp_max_c: 88\n") != NULL;
+
+    static TeaPreset verify;
+    memset(&verify, 0, sizeof(verify));
+    TeaPresetResult load_again =
+        tea_preset_parse_buf(test_read_buffer, text_len, &verify, NULL, 0);
+
+    storage_common_remove(storage, TEST_FILE_LEGACY);
+    furi_record_close(RECORD_STORAGE);
+
+    mu_assert("legacy file must be written", written);
+    mu_assert_int_eq(TeaPresetResultOK, loaded);
+    mu_assert("legacy file must get defaults 85/90", legacy_defaults);
+    mu_assert_int_eq(PresetSaveOK, save_edit);
+    mu_assert("edit must keep the file name", path_kept);
+    mu_assert("file must contain water_temp_min_c", has_min);
+    mu_assert("file must contain water_temp_max_c", has_max);
+    mu_assert_int_eq(TeaPresetResultOK, load_again);
+    mu_assert_int_eq(85, verify.water_temp_min_c);
+    mu_assert_int_eq(88, verify.water_temp_max_c);
+    mu_assert_string_eq("Legacy Tea", verify.name);
+    mu_assert_int_eq(TEA_DEFAULT_LEAF_TENTHS, verify.leaf_tenths_g);
+    mu_assert_int_eq(TEA_DEFAULT_FIRST_POUR_SEC, verify.first_pour_sec);
+    mu_assert_int_eq(TEA_DEFAULT_INCREMENT_SEC, verify.increment_sec);
+    mu_assert_int_eq(TEA_DEFAULT_MAX_POURS, verify.max_pours);
+}
+
 MU_TEST(test_delete_active_preset_clears_session) {
     // FR-015/FR-017/FR-018: удаление активного пресета сбрасывает сессию.
     Storage* storage = furi_record_open(RECORD_STORAGE);
@@ -389,11 +558,14 @@ static void run_minunit_test_preset_write_suite(void) {
     MU_RUN_TEST(test_make_path);
     MU_RUN_TEST(test_serialize_reference);
     MU_RUN_TEST(test_serialize_round_trip);
+    MU_RUN_TEST(test_serialize_water_keys);
+    MU_RUN_TEST(test_check_draft_water_temp);
     MU_RUN_TEST(test_check_draft_names);
     MU_RUN_TEST(test_check_draft_ranges);
     MU_RUN_TEST(test_defaults_round_trip);
     MU_RUN_TEST(test_save_create_and_suffix);
     MU_RUN_TEST(test_save_edit_same_path);
+    MU_RUN_TEST(test_save_edit_legacy_adds_water_keys);
     MU_RUN_TEST(test_delete_active_preset_clears_session);
     MU_RUN_TEST(test_save_rejects_bad_draft);
     MU_RUN_TEST(test_delete);

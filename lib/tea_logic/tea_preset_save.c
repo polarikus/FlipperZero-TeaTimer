@@ -136,12 +136,16 @@ TeaPresetResult
         size,
         "name: %s\n"
         "leaf_g_per_100ml: %u.%u\n"
+        "water_temp_min_c: %u\n"
+        "water_temp_max_c: %u\n"
         "first_pour_sec: %u\n"
         "increment_sec: %u\n"
         "max_pours: %u\n",
         preset->name,
         (unsigned)(preset->leaf_tenths_g / 10U),
         (unsigned)(preset->leaf_tenths_g % 10U),
+        (unsigned)preset->water_temp_min_c,
+        (unsigned)preset->water_temp_max_c,
         (unsigned)preset->first_pour_sec,
         (unsigned)preset->increment_sec,
         (unsigned)preset->max_pours);
@@ -197,6 +201,20 @@ TeaPresetResult
 
     if(draft->leaf_tenths_g < 1 || draft->leaf_tenths_g > 500) {
         tea_error_field_set(error_field, error_field_size, "leaf_g_per_100ml");
+        return TeaPresetResultErrOutOfRange;
+    }
+    // FR-002, FR-017: каждое значение температуры — в 85–90.
+    if(draft->water_temp_min_c < TEA_WATER_TEMP_MIN || draft->water_temp_min_c > TEA_WATER_TEMP_MAX) {
+        tea_error_field_set(error_field, error_field_size, "water_temp_min_c");
+        return TeaPresetResultErrOutOfRange;
+    }
+    if(draft->water_temp_max_c < TEA_WATER_TEMP_MIN || draft->water_temp_max_c > TEA_WATER_TEMP_MAX) {
+        tea_error_field_set(error_field, error_field_size, "water_temp_max_c");
+        return TeaPresetResultErrOutOfRange;
+    }
+    // FR-003: минимум не больше максимума (равенство допустимо).
+    if(draft->water_temp_min_c > draft->water_temp_max_c) {
+        tea_error_field_set(error_field, error_field_size, "water_temp_max_c");
         return TeaPresetResultErrOutOfRange;
     }
     if(draft->first_pour_sec < 1 || draft->first_pour_sec > 3600) {
@@ -270,6 +288,8 @@ static PresetSaveResult tea_preset_choose_path(
 /** Сравнить прочитанный пресет с черновиком (без пути). */
 static bool tea_preset_same_values(const TeaPreset* a, const TeaPreset* b) {
     return strcmp(a->name, b->name) == 0 && a->leaf_tenths_g == b->leaf_tenths_g &&
+           a->water_temp_min_c == b->water_temp_min_c &&
+           a->water_temp_max_c == b->water_temp_max_c &&
            a->first_pour_sec == b->first_pour_sec && a->increment_sec == b->increment_sec &&
            a->max_pours == b->max_pours;
 }
