@@ -7,6 +7,12 @@ static void (*const tea_timer_scene_on_enter_handlers[])(void*) = {
     tea_timer_scene_brew_on_enter,
     tea_timer_scene_no_presets_on_enter,
     tea_timer_scene_error_on_enter,
+    tea_timer_scene_actions_on_enter,
+    tea_timer_scene_edit_name_on_enter,
+    tea_timer_scene_edit_number_on_enter,
+    tea_timer_scene_edit_summary_on_enter,
+    tea_timer_scene_delete_confirm_on_enter,
+    tea_timer_scene_saved_on_enter,
 };
 
 static bool (*const tea_timer_scene_on_event_handlers[])(void*, SceneManagerEvent) = {
@@ -16,6 +22,12 @@ static bool (*const tea_timer_scene_on_event_handlers[])(void*, SceneManagerEven
     tea_timer_scene_brew_on_event,
     tea_timer_scene_no_presets_on_event,
     tea_timer_scene_error_on_event,
+    tea_timer_scene_actions_on_event,
+    tea_timer_scene_edit_name_on_event,
+    tea_timer_scene_edit_number_on_event,
+    tea_timer_scene_edit_summary_on_event,
+    tea_timer_scene_delete_confirm_on_event,
+    tea_timer_scene_saved_on_event,
 };
 
 static void (*const tea_timer_scene_on_exit_handlers[])(void*) = {
@@ -25,6 +37,12 @@ static void (*const tea_timer_scene_on_exit_handlers[])(void*) = {
     tea_timer_scene_brew_on_exit,
     tea_timer_scene_no_presets_on_exit,
     tea_timer_scene_error_on_exit,
+    tea_timer_scene_actions_on_exit,
+    tea_timer_scene_edit_name_on_exit,
+    tea_timer_scene_edit_number_on_exit,
+    tea_timer_scene_edit_summary_on_exit,
+    tea_timer_scene_delete_confirm_on_exit,
+    tea_timer_scene_saved_on_exit,
 };
 
 const SceneManagerHandlers tea_timer_scene_handlers = {

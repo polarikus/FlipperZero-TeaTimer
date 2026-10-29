@@ -87,6 +87,31 @@ static TeaTimerApp* tea_timer_alloc(void) {
     app->error = widget_alloc();
     view_dispatcher_add_view(app->view_dispatcher, TeaTimerViewError, widget_get_view(app->error));
 
+    // Сцены 002: меню действий, форма создания/правки, результат операции.
+    app->actions_menu = submenu_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewActions, submenu_get_view(app->actions_menu));
+
+    app->text_input = text_input_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewEditName, text_input_get_view(app->text_input));
+
+    // Один экземпляр number_input на все четыре числовых шага формы.
+    app->number_input = number_input_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewEditNumber, number_input_get_view(app->number_input));
+
+    app->edit_summary = widget_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewEditSummary, widget_get_view(app->edit_summary));
+
+    app->delete_confirm = widget_alloc();
+    view_dispatcher_add_view(
+        app->view_dispatcher, TeaTimerViewDeleteConfirm, widget_get_view(app->delete_confirm));
+
+    app->saved = widget_alloc();
+    view_dispatcher_add_view(app->view_dispatcher, TeaTimerViewSaved, widget_get_view(app->saved));
+
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui, ViewDispatcherTypeFullscreen);
     scene_manager_next_scene(app->scene_manager, TeaTimerSceneMenu);
 
@@ -119,6 +144,12 @@ static void tea_timer_free(TeaTimerApp* app) {
     }
 
     // Снятие view в порядке, строго обратном регистрации (принцип V).
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewSaved);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewDeleteConfirm);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewEditSummary);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewEditNumber);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewEditName);
+    view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewActions);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewError);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewNoPresets);
     view_dispatcher_remove_view(app->view_dispatcher, TeaTimerViewBrew);
@@ -130,6 +161,12 @@ static void tea_timer_free(TeaTimerApp* app) {
     scene_manager_free(app->scene_manager);
 
     brew_view_free(app->brew_view);
+    widget_free(app->saved);
+    widget_free(app->delete_confirm);
+    widget_free(app->edit_summary);
+    number_input_free(app->number_input);
+    text_input_free(app->text_input);
+    submenu_free(app->actions_menu);
     widget_free(app->preset_card);
     widget_free(app->no_presets);
     widget_free(app->error);

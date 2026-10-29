@@ -77,6 +77,24 @@ void tea_timer_scene_file_select_file_callback(void* context) {
 }
 
 /**
+ * Вернуться к выбору файла после сохранения/удаления без «мёртвых» сцен в стеке (R-N-1).
+ * Если каталог пуст — обычная маршрутизация `tea_timer_show_presets`.
+ */
+void tea_timer_goto_file_select(TeaTimerApp* app) {
+    furi_assert(app != NULL);
+
+    if(!tea_timer_has_presets(app->storage)) {
+        tea_timer_show_presets(app);
+        return;
+    }
+
+    if(!scene_manager_search_and_switch_to_previous_scene(
+           app->scene_manager, TeaTimerSceneFileSelect)) {
+        scene_manager_next_scene(app->scene_manager, TeaTimerSceneFileSelect);
+    }
+}
+
+/**
  * Проверка носителя и каталога непосредственно перед показом браузера (T037).
  * Дублирует маршрутизацию из меню, чтобы перехватить карту, извлечённую между
  * проверкой и входом в сцену. При отказе сцена уже переключена на `Error`/`NoPresets`.

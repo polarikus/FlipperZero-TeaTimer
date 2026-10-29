@@ -7,6 +7,8 @@
 #include <gui/modules/submenu.h>
 #include <gui/modules/file_browser.h>
 #include <gui/modules/widget.h>
+#include <gui/modules/text_input.h>
+#include <gui/modules/number_input.h>
 #include <notification/notification.h>
 #include <notification/notification_messages.h>
 #include <storage/storage.h>
@@ -34,8 +36,30 @@ typedef enum {
     TeaTimerViewBrew, /**< Экран заваривания (собственный View) */
     TeaTimerViewNoPresets, /**< Каталог пуст или отсутствует (widget, FR-008) */
     TeaTimerViewError, /**< SD-карта недоступна (widget, FR-024) */
+    TeaTimerViewActions, /**< Меню действий над пресетом (submenu) */
+    TeaTimerViewEditName, /**< Ввод названия пресета (text_input) */
+    TeaTimerViewEditNumber, /**< Числовые шаги формы (number_input) */
+    TeaTimerViewEditSummary, /**< Сводка формы и запись (widget) */
+    TeaTimerViewDeleteConfirm, /**< Подтверждение удаления (widget) */
+    TeaTimerViewSaved, /**< Пресет сохранён/удалён (widget) */
     TeaTimerViewCount,
 } TeaTimerViewId;
+
+/** Шаг формы создания/правки пресета. */
+typedef enum {
+    TeaEditStepName, /**< Название */
+    TeaEditStepLeaf, /**< Граммовка в десятых долях */
+    TeaEditStepFirst, /**< Первый пролив, с */
+    TeaEditStepIncrement, /**< Приращение, с */
+    TeaEditStepMaxPours, /**< Число проливов */
+    TeaEditStepSummary, /**< Сводка */
+} TeaEditStep;
+
+/** Тип результата на экране `Saved`. */
+typedef enum {
+    TeaSavedKindSaved, /**< Пресет записан */
+    TeaSavedKindDeleted, /**< Пресет удалён */
+} TeaSavedKind;
 
 /** Состояние приложения: владение ресурсами и данные сессии. */
 typedef struct TeaTimerApp {
@@ -55,4 +79,17 @@ typedef struct TeaTimerApp {
     BrewView* brew_view; /**< Экран заваривания */
     BrewSession session; /**< Текущая сессия заваривания */
     char* parse_buf; /**< Буфер разбора пресета (TEA_PARSE_BUF_SIZE) в куче */
+
+    Submenu* actions_menu; /**< Меню действий над пресетом */
+    TextInput* text_input; /**< Ввод названия пресета */
+    NumberInput* number_input; /**< Числовые шаги формы (один на все шаги) */
+    Widget* edit_summary; /**< Сводка формы */
+    Widget* delete_confirm; /**< Подтверждение удаления */
+    Widget* saved; /**< Результат сохранения/удаления */
+
+    TeaPreset draft; /**< Черновик формы: создание или правка */
+    bool editing; /**< true — правка существующего пресета */
+    uint8_t edit_step; /**< Текущий шаг формы (`TeaEditStep`) */
+    TeaSavedKind saved_kind; /**< Что показывать на экране `Saved` */
+    char saved_file[32]; /**< Имя файла (basename) для экрана `Saved` */
 } TeaTimerApp;

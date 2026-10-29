@@ -43,7 +43,8 @@ bool brew_session_complete(BrewSession* session) {
         return false;
     }
     session->completed_pours++;
-    session->next_pour_sec = brew_math_pour_sec(session->next_pour_sec, session->preset.increment_sec);
+    session->next_pour_sec =
+        brew_math_pour_sec(session->next_pour_sec, session->preset.increment_sec);
     session->phase = BrewPhaseDONE;
     return true;
 }
@@ -52,6 +53,15 @@ void brew_session_abort(BrewSession* session) {
     if(session->phase == BrewPhaseRUNNING) {
         session->phase = BrewPhaseIDLE;
     }
+}
+
+void brew_session_clear(BrewSession* session) {
+    memset(session, 0, sizeof(BrewSession));
+    session->has_preset = false;
+    session->completed_pours = 0;
+    session->next_pour_sec = 0;
+    session->phase = BrewPhaseIDLE;
+    session->deadline_tick = 0;
 }
 
 bool brew_session_over_limit(const BrewSession* session) {

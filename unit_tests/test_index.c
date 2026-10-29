@@ -20,10 +20,12 @@ typedef struct {
 
 extern int run_minunit_test_tea_preset(void);
 extern int run_minunit_test_brew_math(void);
+extern int run_minunit_test_preset_write(void);
 
 static const UnitTest unit_tests[] = {
     {"tea_preset", run_minunit_test_tea_preset},
     {"brew_math", run_minunit_test_brew_math},
+    {"preset_write", run_minunit_test_preset_write},
 };
 
 /** Определения глобальных переменных прогона. */
