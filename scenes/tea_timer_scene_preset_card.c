@@ -40,9 +40,10 @@ void tea_timer_scene_preset_card_on_enter(void* context) {
 
     widget_reset(widget);
 
+    // Раскладка 003 (contracts/ui-screens.md §1.1): пять строк шагом 10 px над кнопкой.
     char buffer[48];
     snprintf(buffer, sizeof(buffer), "%s", app->session.preset.name);
-    widget_add_string_element(widget, 64, 2, AlignCenter, AlignTop, FontPrimary, buffer);
+    widget_add_string_element(widget, 64, 0, AlignCenter, AlignTop, FontPrimary, buffer);
 
     snprintf(
         buffer,
@@ -50,7 +51,16 @@ void tea_timer_scene_preset_card_on_enter(void* context) {
         "Leaf %u.%u g/100ml",
         (unsigned)(app->session.preset.leaf_tenths_g / 10),
         (unsigned)(app->session.preset.leaf_tenths_g % 10));
-    widget_add_string_element(widget, 64, 16, AlignCenter, AlignTop, FontSecondary, buffer);
+    widget_add_string_element(widget, 64, 10, AlignCenter, AlignTop, FontSecondary, buffer);
+
+    // FR-010: рекомендуемый диапазон температуры воды виден всегда.
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "Water %u-%u C",
+        (unsigned)app->session.preset.water_temp_min_c,
+        (unsigned)app->session.preset.water_temp_max_c);
+    widget_add_string_element(widget, 64, 20, AlignCenter, AlignTop, FontSecondary, buffer);
 
     snprintf(
         buffer,
@@ -58,7 +68,7 @@ void tea_timer_scene_preset_card_on_enter(void* context) {
         "Pours %u / %u",
         (unsigned)app->session.completed_pours,
         (unsigned)app->session.preset.max_pours);
-    widget_add_string_element(widget, 64, 28, AlignCenter, AlignTop, FontSecondary, buffer);
+    widget_add_string_element(widget, 64, 30, AlignCenter, AlignTop, FontSecondary, buffer);
 
     char time[16];
     brew_math_format_time(app->session.next_pour_sec, time, sizeof(time));

@@ -60,6 +60,27 @@ MU_TEST(test_reset_from_preset) {
     mu_assert_int_eq(50, session.preset.leaf_tenths_g);
 }
 
+MU_TEST(test_reset_keeps_water_temp) {
+    // FR-026: диапазон температуры сохраняется в сессии после запуска.
+    // FR-012/FR-027: на экран заваривания значение не выводится, но не теряется.
+    TeaPreset preset;
+    memset(&preset, 0, sizeof(preset));
+    snprintf(preset.name, sizeof(preset.name), "Temp Tea");
+    preset.leaf_tenths_g = 50;
+    preset.water_temp_min_c = 85;
+    preset.water_temp_max_c = 87;
+    preset.first_pour_sec = 20;
+    preset.increment_sec = 5;
+    preset.max_pours = 6;
+
+    BrewSession session;
+    brew_session_reset_from_preset(&preset, &session);
+
+    mu_assert("has_preset must be true", session.has_preset);
+    mu_assert_int_eq(85, session.preset.water_temp_min_c);
+    mu_assert_int_eq(87, session.preset.water_temp_max_c);
+}
+
 MU_TEST(test_complete_increments_only_on_running) {
     BrewSession session = brew_make_session(20, 5, 6);
 
@@ -134,6 +155,7 @@ static void run_minunit_test_brew_math_suite(void) {
     MU_RUN_TEST(test_pour_sec_clamps_to_max);
     MU_RUN_TEST(test_format_time);
     MU_RUN_TEST(test_reset_from_preset);
+    MU_RUN_TEST(test_reset_keeps_water_temp);
     MU_RUN_TEST(test_complete_increments_only_on_running);
     MU_RUN_TEST(test_abort_keeps_counters);
     MU_RUN_TEST(test_over_limit_boundary);

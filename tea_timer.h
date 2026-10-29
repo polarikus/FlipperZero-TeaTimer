@@ -25,6 +25,18 @@ extern "C" {
 /** Суффикс временного файла при записи пресета. */
 #define TEA_TMP_SUFFIX ".tmp"
 
+/** Нижняя граница рекомендуемой температуры воды, °C. */
+#define TEA_WATER_TEMP_MIN 85
+
+/** Верхняя граница рекомендуемой температуры воды, °C. */
+#define TEA_WATER_TEMP_MAX 90
+
+/** Умолчание температуры воды (минимум) для нового пресета и файлов старого формата. */
+#define TEA_WATER_TEMP_DEFAULT_MIN TEA_WATER_TEMP_MIN
+
+/** Умолчание температуры воды (максимум) для нового пресета и файлов старого формата. */
+#define TEA_WATER_TEMP_DEFAULT_MAX TEA_WATER_TEMP_MAX
+
 /** Результат разбора и загрузки файла пресета. */
 typedef enum {
     TeaPresetResultOK, /**< Файл корректен */
@@ -49,6 +61,8 @@ typedef struct {
 typedef struct {
     char name[TEA_NAME_MAX + 1]; /**< 1–24 байта: латиница, цифры, пробел, `_` */
     uint16_t leaf_tenths_g; /**< Граммовка в десятых долях: 1–500 (0.1–50.0 г) */
+    uint8_t water_temp_min_c; /**< Температура воды, минимум: 85–90 (≤ `water_temp_max_c`) */
+    uint8_t water_temp_max_c; /**< Температура воды, максимум: 85–90 (≥ `water_temp_min_c`) */
     uint16_t first_pour_sec; /**< Длительность первого пролива: 1–3600 с */
     uint16_t increment_sec; /**< Приращение на каждый следующий пролив: 0–600 с */
     uint8_t max_pours; /**< Рекомендованное число проливов: 1–99 */

@@ -18,6 +18,12 @@ static TeaEditStep tea_timer_scene_edit_summary_step_for_field(const char* field
     if(strcmp(field, "leaf_g_per_100ml") == 0) {
         return TeaEditStepLeaf;
     }
+    if(strcmp(field, "water_temp_min_c") == 0) {
+        return TeaEditStepWaterMin;
+    }
+    if(strcmp(field, "water_temp_max_c") == 0) {
+        return TeaEditStepWaterMax;
+    }
     if(strcmp(field, "first_pour_sec") == 0) {
         return TeaEditStepFirst;
     }
@@ -32,6 +38,9 @@ static const char* tea_timer_scene_edit_summary_hint(TeaEditStep step) {
     switch(step) {
     case TeaEditStepLeaf:
         return "Leaf: 0.1-50.0 g";
+    case TeaEditStepWaterMin:
+    case TeaEditStepWaterMax:
+        return "Water: 85-90 C";
     case TeaEditStepFirst:
         return "First: 1-3600 sec";
     case TeaEditStepIncrement:
@@ -128,6 +137,8 @@ static void tea_timer_scene_edit_summary_sync_session(TeaTimerApp* app, const ch
     }
 
     app->session.preset.leaf_tenths_g = app->draft.leaf_tenths_g;
+    app->session.preset.water_temp_min_c = app->draft.water_temp_min_c;
+    app->session.preset.water_temp_max_c = app->draft.water_temp_max_c;
     app->session.preset.first_pour_sec = app->draft.first_pour_sec;
     app->session.preset.increment_sec = app->draft.increment_sec;
     app->session.preset.max_pours = app->draft.max_pours;
@@ -202,25 +213,28 @@ void tea_timer_scene_edit_summary_on_enter(void* context) {
         app->editing ? "Edit preset" : "New preset");
 
     widget_add_string_element(
-        widget, 64, 12, AlignCenter, AlignTop, FontSecondary, app->draft.name);
+        widget, 64, 10, AlignCenter, AlignTop, FontSecondary, app->draft.name);
 
+    // FR-018: граммовка и диапазон температуры в одной строке над кнопкой `Save`.
     snprintf(
         buffer,
         sizeof(buffer),
-        "Leaf %u.%u g/100ml",
+        "Leaf %u.%u  Water %u-%u C",
         (unsigned)(app->draft.leaf_tenths_g / 10U),
-        (unsigned)(app->draft.leaf_tenths_g % 10U));
-    widget_add_string_element(widget, 64, 21, AlignCenter, AlignTop, FontSecondary, buffer);
+        (unsigned)(app->draft.leaf_tenths_g % 10U),
+        (unsigned)app->draft.water_temp_min_c,
+        (unsigned)app->draft.water_temp_max_c);
+    widget_add_string_element(widget, 64, 19, AlignCenter, AlignTop, FontSecondary, buffer);
 
     char first[16];
     char step[16];
     brew_math_format_time(app->draft.first_pour_sec, first, sizeof(first));
     brew_math_format_time(app->draft.increment_sec, step, sizeof(step));
     snprintf(buffer, sizeof(buffer), "First %s  Step %s", first, step);
-    widget_add_string_element(widget, 64, 30, AlignCenter, AlignTop, FontSecondary, buffer);
+    widget_add_string_element(widget, 64, 28, AlignCenter, AlignTop, FontSecondary, buffer);
 
     snprintf(buffer, sizeof(buffer), "Max %u pours", (unsigned)app->draft.max_pours);
-    widget_add_string_element(widget, 64, 39, AlignCenter, AlignTop, FontSecondary, buffer);
+    widget_add_string_element(widget, 64, 37, AlignCenter, AlignTop, FontSecondary, buffer);
 
     widget_add_button_element(
         widget, GuiButtonTypeCenter, "Save", tea_timer_scene_edit_summary_save_callback, app);

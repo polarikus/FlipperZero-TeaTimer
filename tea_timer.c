@@ -96,7 +96,7 @@ static TeaTimerApp* tea_timer_alloc(void) {
     view_dispatcher_add_view(
         app->view_dispatcher, TeaTimerViewEditName, text_input_get_view(app->text_input));
 
-    // Один экземпляр number_input на все четыре числовых шага формы.
+    // Один экземпляр number_input на все шесть числовых шагов формы.
     app->number_input = number_input_alloc();
     view_dispatcher_add_view(
         app->view_dispatcher, TeaTimerViewEditNumber, number_input_get_view(app->number_input));

@@ -10,7 +10,11 @@
 #define TEA_FIELD_FIRST (1U << 2)
 #define TEA_FIELD_INCREMENT (1U << 3)
 #define TEA_FIELD_MAX_POURS (1U << 4)
+#define TEA_FIELD_WATER_MIN (1U << 5)
+#define TEA_FIELD_WATER_MAX (1U << 6)
 #define TEA_FIELD_ALL (TEA_FIELD_NAME | TEA_FIELD_LEAF | TEA_FIELD_FIRST | TEA_FIELD_INCREMENT | TEA_FIELD_MAX_POURS)
+/** Пара ключей температуры: обязательна только целиком (003, FR-005). */
+#define TEA_FIELD_WATER_ALL (TEA_FIELD_WATER_MIN | TEA_FIELD_WATER_MAX)
 
 static bool tea_char_is_space(char c) {
     return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\v' || c == '\f';
@@ -132,6 +136,9 @@ TeaPresetResult tea_preset_parse_buf(
         return TeaPresetResultErrBadNumber;
     }
     memset(out, 0, sizeof(TeaPreset));
+    // Температура не обязательна: файлы 001/002 получают умолчание 85–90 (FR-006).
+    out->water_temp_min_c = TEA_WATER_TEMP_DEFAULT_MIN;
+    out->water_temp_max_c = TEA_WATER_TEMP_DEFAULT_MAX;
 
     uint32_t seen = 0;
     size_t pos = 0;
@@ -205,6 +212,10 @@ TeaPresetResult tea_preset_parse_buf(
             field_mask = TEA_FIELD_INCREMENT;
         } else if(tea_key_eq(key, key_len, "max_pours")) {
             field_mask = TEA_FIELD_MAX_POURS;
+        } else if(tea_key_eq(key, key_len, "water_temp_min_c")) {
+            field_mask = TEA_FIELD_WATER_MIN;
+        } else if(tea_key_eq(key, key_len, "water_temp_max_c")) {
+            field_mask = TEA_FIELD_WATER_MAX;
         } else {
             // Неизвестный ключ — совместимое расширение, игнорируем.
             continue;
@@ -255,6 +266,19 @@ TeaPresetResult tea_preset_parse_buf(
             return TeaPresetResultErrBadNumber;
         }
 
+        if(field_mask == TEA_FIELD_WATER_MIN || field_mask == TEA_FIELD_WATER_MAX) {
+            if(number < TEA_WATER_TEMP_MIN || number > TEA_WATER_TEMP_MAX) {
+                tea_copy_limited(error_field, error_field_size, key, key_len);
+                return TeaPresetResultErrOutOfRange;
+            }
+            if(field_mask == TEA_FIELD_WATER_MIN) {
+                out->water_temp_min_c = (uint8_t)number;
+            } else {
+                out->water_temp_max_c = (uint8_t)number;
+            }
+            continue;
+        }
+
         if(field_mask == TEA_FIELD_FIRST) {
             if(number < 1 || number > 3600) {
                 tea_copy_limited(error_field, error_field_size, key, key_len);
@@ -276,7 +300,23 @@ TeaPresetResult tea_preset_parse_buf(
         }
     }
 
-    if(seen != TEA_FIELD_ALL) {
+    // Пара температуры: неполная пара — ошибка с именем отсутствующего ключа (FR-005).
+    uint32_t water_seen = seen & TEA_FIELD_WATER_ALL;
+    if(water_seen == TEA_FIELD_WATER_MIN) {
+        tea_copy_limited(error_field, error_field_size, "water_temp_max_c", 16);
+        return TeaPresetResultErrNoField;
+    }
+    if(water_seen == TEA_FIELD_WATER_MAX) {
+        tea_copy_limited(error_field, error_field_size, "water_temp_min_c", 16);
+        return TeaPresetResultErrNoField;
+    }
+    // Минимум больше максимума — ошибка диапазона на поле максимума (FR-003).
+    if(water_seen == TEA_FIELD_WATER_ALL && out->water_temp_min_c > out->water_temp_max_c) {
+        tea_copy_limited(error_field, error_field_size, "water_temp_max_c", 16);
+        return TeaPresetResultErrOutOfRange;
+    }
+
+    if((seen & TEA_FIELD_ALL) != TEA_FIELD_ALL) {
         const char* missing = tea_first_missing_field(seen);
         tea_copy_limited(error_field, error_field_size, missing, strlen(missing));
         return TeaPresetResultErrNoField;

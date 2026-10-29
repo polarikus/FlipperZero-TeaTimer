@@ -11,11 +11,13 @@
 extern "C" {
 #endif
 
-/** Умолчания формы создания пресета: 5.0 г / 20 с / 5 с / 6 проливов. */
-#define TEA_DEFAULT_LEAF_TENTHS    50
-#define TEA_DEFAULT_FIRST_POUR_SEC 20
-#define TEA_DEFAULT_INCREMENT_SEC  5
-#define TEA_DEFAULT_MAX_POURS      6
+/** Умолчания формы создания пресета: 5.0 г / 85–90 °C / 20 с / 5 с / 6 проливов. */
+#define TEA_DEFAULT_LEAF_TENTHS      50
+#define TEA_DEFAULT_WATER_TEMP_MIN   TEA_WATER_TEMP_DEFAULT_MIN
+#define TEA_DEFAULT_WATER_TEMP_MAX   TEA_WATER_TEMP_DEFAULT_MAX
+#define TEA_DEFAULT_FIRST_POUR_SEC   20
+#define TEA_DEFAULT_INCREMENT_SEC    5
+#define TEA_DEFAULT_MAX_POURS        6
 
 /**
  * Построить основу имени файла (`slug`) из названия пресета.
@@ -41,7 +43,10 @@ size_t
     tea_preset_make_path(const char* base, const char* slug, uint8_t index, char* out, size_t size);
 
 /**
- * Сериализовать пресет в формат 001 (пять ключей, LF после каждой строки, без BOM).
+ * Сериализовать пресет в формат 003 (семь ключей, LF после каждой строки, без BOM).
+ *
+ * Порядок ключей: `name`, `leaf_g_per_100ml`, `water_temp_min_c`, `water_temp_max_c`,
+ * `first_pour_sec`, `increment_sec`, `max_pours` (contracts/tea-file-format.md §6).
  *
  * @param out_len длина результата без терминатора (может быть NULL)
  * @return TeaPresetResultOK либо TeaPresetResultErrTooLarge

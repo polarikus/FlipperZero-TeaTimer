@@ -54,42 +54,66 @@ render it). Maximum file size is 1024 bytes.
 |---|---|---|---|
 | `name` | text | 1–24 chars: Latin letters, digits, space, `_` | `Green Tea` |
 | `leaf_g_per_100ml` | decimal, `.` as separator, exactly one digit after the dot | `0.1`–`50.0` | `5.0` |
+| `water_temp_min_c` | integer | `85`–`90` | `85` |
+| `water_temp_max_c` | integer | `85`–`90` | `90` |
 | `first_pour_sec` | integer | `1`–`3600` | `20` |
 | `increment_sec` | integer | `0`–`600` | `5` |
 | `max_pours` | integer | `1`–`99` | `6` |
 
-All five keys are mandatory and must appear exactly once.
+The five keys `name`, `leaf_g_per_100ml`, `first_pour_sec`, `increment_sec` and `max_pours`
+are mandatory and must appear exactly once.
+
+The water temperature is an optional pair: `water_temp_min_c` and `water_temp_max_c` must be
+given **together** or not at all.
+
+- Both keys are missing → the preset gets the default range `85`–`90`.
+- Both keys are present → values are used as is; `water_temp_min_c` must not be greater than
+  `water_temp_max_c` (equal values such as `90`/`90` are allowed).
+- Only one key of the pair is present → the file is rejected with
+  `Missing field: water_temp_min_c` or `Missing field: water_temp_max_c`.
+
+The preset card shows the range as `Water 85-90 C`. Presets created or edited on the device
+always get both keys written to the file.
 
 Example `green_tea.tea`:
 
 ```tea
-# Green Tea — 5 g per 100 ml, 6 pours
+# Green Tea — 5 g per 100 ml, 6 pours, water 85-90 C
 name: Green Tea
 leaf_g_per_100ml: 5.0
+water_temp_min_c: 85
+water_temp_max_c: 90
 first_pour_sec: 20
 increment_sec: 5
 max_pours: 6
 ```
+
+New and edited files always contain the seven keys in this order.
 
 With this preset the first pour lasts 20 s, the second 25 s, the third 30 s, and so on.
 `max_pours` is only a recommendation: brewing beyond it is allowed and is shown as
 `Pours 9 / 8` with an `OVER` badge.
 
 If a file is invalid, the app shows a short dialog with the reason (for example
-`Missing field: max_pours`, `Out of range: first_pour_sec`, `File is larger than 1 KB`) and
-returns to the file browser. The other presets stay usable.
+`Missing field: max_pours`, `Out of range: first_pour_sec`,
+`Out of range: water_temp_min_c`, `File is larger than 1 KB`) and returns to the file
+browser. The other presets stay usable.
 
 ### Creating a preset on the device
 
-Main menu → `New preset`. The form walks through five steps:
+Main menu → `New preset`. The form walks through seven steps:
 
 1. `Tea name` — 1–24 characters: Latin letters, digits, space, `_` (the on-screen keyboard).
 2. `Leaf, 0.1 g/100ml` — 0.1–50.0 g (entered in tenths of a gram).
-3. `First pour, sec` — 1–3600 s.
-4. `Step, sec` — 0–600 s (the increment added to every next pour).
-5. `Max pours` — 1–99.
+3. `Water min, C` — 85–90 (default `85`).
+4. `Water max, C` — from the entered minimum to 90 (default `90`), so the minimum can never
+   exceed the maximum.
+5. `First pour, sec` — 1–3600 s.
+6. `Step, sec` — 0–600 s (the increment added to every next pour).
+7. `Max pours` — 1–99.
 
-The summary screen shows the entered values with a `Save` button. On `Save` the app writes
+The summary screen shows the entered values (`Leaf 5.0  Water 85-90 C` on one line) with a
+`Save` button. On `Save` the app writes
 the preset to `/ext/apps_data/tea_timer/`, reads it back to verify, and shows `Saved` with
 the file name; `OK` returns to the preset list. The file name is derived from the tea name
 (`Green Tea` → `green_tea.tea`). If that name is already taken, the app adds a suffix
@@ -173,7 +197,7 @@ Expected report:
 ```
 test_reference_file()
 ...
-33 tests, 198 assertions, 0 failures
+40 tests, 273 assertions, 0 failures
 Time: 1502 ms
 Leaked: 0
 Status: PASSED

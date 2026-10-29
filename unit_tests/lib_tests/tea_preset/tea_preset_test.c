@@ -243,6 +243,130 @@ MU_TEST(test_duplicate_numeric_field) {
     mu_assert_string_eq("max_pours", field);
 }
 
+MU_TEST(test_water_temp_values) {
+    // FR-001…FR-006: диапазон читается, отсутствие обоих ключей даёт умолчание 85/90.
+    TeaPreset preset;
+    char field[24];
+
+    const char* reference = "name: Green Tea\n"
+                            "leaf_g_per_100ml: 5.0\n"
+                            "water_temp_min_c: 85\n"
+                            "water_temp_max_c: 90\n"
+                            "first_pour_sec: 20\n"
+                            "increment_sec: 5\n"
+                            "max_pours: 6\n";
+    mu_assert_int_eq(TeaPresetResultOK, parse_text(reference, &preset, field, sizeof(field)));
+    mu_assert_int_eq(85, preset.water_temp_min_c);
+    mu_assert_int_eq(90, preset.water_temp_max_c);
+
+    const char* narrow =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85\n"
+        "water_temp_max_c: 87\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(TeaPresetResultOK, parse_text(narrow, &preset, field, sizeof(field)));
+    mu_assert_int_eq(85, preset.water_temp_min_c);
+    mu_assert_int_eq(87, preset.water_temp_max_c);
+
+    const char* equal =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 87\n"
+        "water_temp_max_c: 87\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(TeaPresetResultOK, parse_text(equal, &preset, field, sizeof(field)));
+    mu_assert_int_eq(87, preset.water_temp_min_c);
+    mu_assert_int_eq(87, preset.water_temp_max_c);
+
+    // FR-006: файл старого формата без обоих ключей — умолчание 85/90.
+    mu_assert_int_eq(TeaPresetResultOK, parse_text(reference_file, &preset, field, sizeof(field)));
+    mu_assert_int_eq(TEA_WATER_TEMP_DEFAULT_MIN, preset.water_temp_min_c);
+    mu_assert_int_eq(TEA_WATER_TEMP_DEFAULT_MAX, preset.water_temp_max_c);
+
+    // Неизвестный ключ `water_temp` не является парой ключей температуры.
+    const char* unknown =
+        "name: A\nleaf_g_per_100ml: 5.0\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n"
+        "water_temp: 85-90\n";
+    mu_assert_int_eq(TeaPresetResultOK, parse_text(unknown, &preset, field, sizeof(field)));
+    mu_assert_int_eq(TEA_WATER_TEMP_DEFAULT_MIN, preset.water_temp_min_c);
+    mu_assert_int_eq(TEA_WATER_TEMP_DEFAULT_MAX, preset.water_temp_max_c);
+}
+
+MU_TEST(test_water_temp_errors) {
+    // FR-002, FR-003, FR-005, FR-007: диапазон, порядок, дубликат, формат числа.
+    TeaPreset preset;
+    char field[24];
+
+    const char* low = "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 84\n"
+                      "water_temp_max_c: 90\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(TeaPresetResultErrOutOfRange, parse_text(low, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_min_c", field);
+
+    const char* high =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85\n"
+        "water_temp_max_c: 91\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrOutOfRange, parse_text(high, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_max_c", field);
+
+    const char* inverted =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 88\n"
+        "water_temp_max_c: 86\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrOutOfRange, parse_text(inverted, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_max_c", field);
+
+    const char* only_min = "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85\n"
+                           "first_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrNoField, parse_text(only_min, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_max_c", field);
+
+    const char* only_max = "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_max_c: 90\n"
+                           "first_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrNoField, parse_text(only_max, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_min_c", field);
+
+    const char* duplicate_min =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85\nwater_temp_min_c: 86\n"
+        "water_temp_max_c: 90\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrDuplicateField,
+        parse_text(duplicate_min, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_min_c", field);
+
+    const char* duplicate_max =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85\nwater_temp_max_c: 90\n"
+        "water_temp_max_c: 89\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrDuplicateField,
+        parse_text(duplicate_max, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_max_c", field);
+
+    const char* fractional =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85.5\n"
+        "water_temp_max_c: 90\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrBadNumber, parse_text(fractional, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_min_c", field);
+
+    const char* garbage =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c: 85abc\n"
+        "water_temp_max_c: 90\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(
+        TeaPresetResultErrBadNumber, parse_text(garbage, &preset, field, sizeof(field)));
+    mu_assert_string_eq("water_temp_min_c", field);
+}
+
+MU_TEST(test_water_temp_leading_zeros) {
+    // FR-007: пробелы вокруг значения и ведущие нули допустимы.
+    TeaPreset preset;
+    char field[24];
+
+    const char* padded =
+        "name: A\nleaf_g_per_100ml: 5.0\nwater_temp_min_c:  085 \n"
+        "water_temp_max_c: 090\nfirst_pour_sec: 20\nincrement_sec: 5\nmax_pours: 6\n";
+    mu_assert_int_eq(TeaPresetResultOK, parse_text(padded, &preset, field, sizeof(field)));
+    mu_assert_int_eq(85, preset.water_temp_min_c);
+    mu_assert_int_eq(90, preset.water_temp_max_c);
+}
+
 /** Записать файл целиком через Storage. */
 static bool test_write_file(Storage* storage, const char* path, const char* data, size_t size) {
     File* file = storage_file_alloc(storage);
@@ -340,6 +464,9 @@ static void run_minunit_test_tea_preset_suite(void) {
     MU_RUN_TEST(test_name_errors);
     MU_RUN_TEST(test_unknown_key_ignored);
     MU_RUN_TEST(test_duplicate_numeric_field);
+    MU_RUN_TEST(test_water_temp_values);
+    MU_RUN_TEST(test_water_temp_errors);
+    MU_RUN_TEST(test_water_temp_leading_zeros);
     MU_RUN_TEST(test_load_from_sd);
 }
 
