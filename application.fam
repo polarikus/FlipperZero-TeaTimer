@@ -11,7 +11,6 @@ App(
     fap_icon_assets="images",
     fap_description="Pour-over tea timer with presets: leaf dosage, pour times and water temperature range.",
     fap_author="igordanilov",
-    cdefines=["TEA_TIMER_TESTS"],
     fap_private_libs=[
         Lib(name="tea_logic", sources=["*.c"]),
     ],
